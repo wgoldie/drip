@@ -2,46 +2,50 @@ import abc
 from dataclasses import dataclass, field, replace
 from enum import Enum, auto
 import typing
-from basetypes import Name, StackValue, ProgramState, TaggedValue
+from basetypes import Name, StackValue, ProgramState, TaggedValue, ByteCodeLine
 from util import pop, pop_n
 
 def no_default():
     raise ValueError('you must pass a default value for this field')
 
-class OpCode(Enum):
-    NOOP = auto()
-    STORE_FROM_LITERAL = auto()
-    PUSH_FROM_LITERAL = auto()
-    PUSH_FROM_NAME = auto()
-    POP_TO_NAME = auto()
-    BINARY_ADD = auto()
-    BINARY_SUBTRACT = auto()
-    PRINT_NAME = auto()
-    SET_FLAG = auto()
-    BRANCH_TO_FLAG = auto()
+C = typing.TypeVar('C')
 
 @dataclass(frozen=True)
 class ByteCodeOp(abc.ABC):
     @classmethod
     @abc.abstractmethod
-    def parse(cls, ):
+    def parse_asm(cls: typing.Type[C], line: ByteCodeLine) -> C:
         ...
-
 
     @abc.abstractmethod
     def interpret(self, state: ProgramState) -> ProgramState:
         ...
 
+
 @dataclass(frozen=True)
 class NoopOp:
-    op_code: typing.ClassVar[typing.Literal[OpCode.NOOP]] = OpCode.NOOP
+    op_code: typing.ClassVar[str] = 'NOOP'
+
+    @classmethod
+    def parse_asm(cls, line: ByteCodeLine):
+        assert cls.op_code == line.op_code
+        assert len(line.arguments) == 0
+        return cls()
+
     def interpret(self, state: ProgramState) -> ProgramState:
         return state
 
 @dataclass(frozen=True)
 class PushFromNameOp:
-    op_code: typing.ClassVar[typing.Literal[OpCode.PUSH_FROM_NAME]] = OpCode.PUSH_FROM_NAME
+    op_code: typing.ClassVar[str] = 'PUSH_FROM_NAME'
     name: Name
+    
+    @classmethod
+    def parse_asm(cls, line: ByteCodeLine):
+        assert cls.op_code == line.op_code
+        assert len(line.arguments) == 1
+        return cls(name=line.arguments[0])
+
     def interpret(self, state: ProgramState) -> ProgramState:
         return replace(
             state,
@@ -49,8 +53,15 @@ class PushFromNameOp:
 
 @dataclass(frozen=True)
 class PopToNameOp:
-    op_code: typing.ClassVar[typing.Literal[OpCode.POP_TO_NAME]] = OpCode.POP_TO_NAME
+    op_code: typing.ClassVar[str] = 'POP_TO_NAME'
     name: Name
+    
+    @classmethod
+    def parse_asm(cls, line: ByteCodeLine):
+        assert cls.op_code == line.op_code
+        assert len(line.arguments) == 1
+        return cls(name=line.arguments[0])
+
     def interpret(self, state: ProgramState) -> ProgramState:
         popped = pop(state.stack)
         return replace(
@@ -60,8 +71,15 @@ class PopToNameOp:
 
 @dataclass(frozen=True)
 class PushFromLiteralOp:
-    op_code: typing.ClassVar[typing.Literal[OpCode.PUSH_FROM_LITERAL]] = OpCode.PUSH_FROM_LITERAL
+    op_code: typing.ClassVar[str] = 'PUSH_FROM_LITERAL'
     value: StackValue
+
+    @classmethod
+    def parse_asm(cls, line: ByteCodeLine):
+        assert cls.op_code == line.op_code
+        assert len(line.arguments) == 2
+        return cls(value=TaggedValue.parse_asm_literal(tag_name=line.arguments[0], value_literal=line.arguments[1]))
+
     def interpret(self, state: ProgramState) -> ProgramState:
         return replace(
             state,
@@ -69,9 +87,15 @@ class PushFromLiteralOp:
 
 @dataclass(frozen=True)
 class StoreFromLiteralOp:
-    op_code: typing.ClassVar[typing.Literal[OpCode.STORE_FROM_LITERAL]] = OpCode.STORE_FROM_LITERAL
+    op_code: typing.ClassVar[str] = 'STORE_FROM_LITERAL'
     name: Name
     value: StackValue
+
+    @classmethod
+    def parse_asm(cls, line: ByteCodeLine):
+        assert cls.op_code == line.op_code
+        assert len(line.arguments) == 3
+        return cls(name=line.arguments[0], value=TaggedValue.parse_asm_literal(tag_name=line.arguments[1], value_literal=line.arguments[2]))
 
     def interpret(self, state: ProgramState) -> ProgramState:
         return replace(
@@ -80,7 +104,14 @@ class StoreFromLiteralOp:
 
 @dataclass(frozen=True)
 class BinaryAddOp:
-    op_code: typing.ClassVar[typing.Literal[OpCode.BINARY_ADD]] = OpCode.BINARY_ADD
+    op_code: typing.ClassVar[str] = 'BINARY_ADD'
+
+    @classmethod
+    def parse_asm(cls, line: ByteCodeLine):
+        assert cls.op_code == line.op_code
+        assert len(line.arguments) == 0
+        return cls()
+
     def interpret(self, state: ProgramState) -> ProgramState:
         popped = pop_n(state.stack, 2)
         assert isinstance(popped.values[0], TaggedValue) and isinstance(popped.values[1], TaggedValue) and popped.values[0].tag == popped.values[1].tag
@@ -90,7 +121,14 @@ class BinaryAddOp:
 
 @dataclass(frozen=True)
 class BinarySubtractOp:
-    op_code: typing.ClassVar[typing.Literal[OpCode.BINARY_SUBTRACT]] = OpCode.BINARY_SUBTRACT
+    op_code: typing.ClassVar[str] = 'BINARY_SUBTRACT'
+
+    @classmethod
+    def parse_asm(cls, line: ByteCodeLine):
+        assert cls.op_code == line.op_code
+        assert len(line.arguments) == 0
+        return cls()
+
     def interpret(self, state: ProgramState) -> ProgramState:
         popped = pop_n(state.stack, 2)
         return replace(
@@ -99,16 +137,30 @@ class BinarySubtractOp:
 
 @dataclass(frozen=True)
 class PrintNameOp:
-    op_code: typing.ClassVar[typing.Literal[OpCode.PRINT_NAME]] = OpCode.PRINT_NAME
+    op_code: typing.ClassVar[str] = 'PRINT_NAME'
     name: Name
+    
+    @classmethod
+    def parse_asm(cls, line: ByteCodeLine):
+        assert cls.op_code == line.op_code
+        assert len(line.arguments) == 1
+        return cls(name=line.arguments[0])
+
     def interpret(self, state: ProgramState) -> ProgramState:
         print(state.names[self.name].value)
         return state
 
 @dataclass(frozen=True)
 class SetFlagOp:
-    op_code: typing.ClassVar[typing.Literal[OpCode.SET_FLAG]] = OpCode.SET_FLAG
+    op_code: typing.ClassVar[str] = 'SET_FLAG'
     flag: Name
+    
+    @classmethod
+    def parse_asm(cls, line: ByteCodeLine):
+        assert cls.op_code == line.op_code
+        assert len(line.arguments) == 1
+        return cls(flag=line.arguments[0])
+
     def interpret(self, state: ProgramState) -> ProgramState:
         assert self.flag not in state.flags
         return replace(
@@ -117,8 +169,15 @@ class SetFlagOp:
 
 @dataclass(frozen=True)
 class BranchToFlagOp:
-    op_code: typing.ClassVar[typing.Literal[OpCode.BRANCH_TO_FLAG]] = OpCode.BRANCH_TO_FLAG
+    op_code: typing.ClassVar[str] = 'BRANCH_TO_FLAG'
     flag: Name
+
+    @classmethod
+    def parse_asm(cls, line: ByteCodeLine):
+        assert cls.op_code == line.op_code
+        assert len(line.arguments) == 1
+        return cls(flag=line.arguments[0])
+
     def interpret(self, state: ProgramState) -> ProgramState:
         assert self.flag in state.flags
         popped = pop(state.stack)
@@ -126,3 +185,16 @@ class BranchToFlagOp:
             state,
             stack=popped.stack,
             program_counter=state.flags[self.flag] if popped.value.value else state.program_counter)
+
+
+OPS = (
+    NoopOp,
+    PushFromNameOp,
+    PopToNameOp,
+    PushFromLiteralOp,
+    StoreFromLiteralOp,
+    BinaryAddOp,
+    BinarySubtractOp,
+    PrintNameOp,
+    SetFlagOp,
+    BranchToFlagOp)
