@@ -6,21 +6,25 @@ from collections import defaultdict
 from dataclasses import dataclass, replace, field
 import typing
 import ops
+from util import pop_n
 from basetypes import Name, StackValue, Stack, TaggedValue, FrameState, ByteCodeLine
-from program import Program
+from program import Program, Subroutine
 
 
-def interpret_subroutine(program: Program, subroutine: str) -> StackValue:
-    lines = program.subroutines[subroutine]
-    frame_history = [FrameState()]
-    next_state = frame_history[-1]
-    while next_state.program_counter < len(lines) and not next_state.return_set:
-        line = lines[next_state.program_counter]
+def interpret_subroutine(program: Program, subroutine: Subroutine, init_state: FrameState) -> StackValue:
+    frame_history = [init_state]
+    next_state = init_state
+    while next_state.program_counter < len(subroutine.ops) and not next_state.return_set:
+        line = subroutine.ops[next_state.program_counter]
         if isinstance(line, ops.SubroutineOp):
             state = line.interpret(next_state)
         elif isinstance(line, ops.CallSubroutineOp):
-            result = interpret_subroutine(program, line.name)
-            state = replace(next_state, stack=next_state.stack+(result,))
+            subsubroutine = program.subroutines[line.name]
+            popped = pop_n(next_state.stack, len(subsubroutine.arguments))
+            names={argument_name: value for argument_name, value in zip(subsubroutine.arguments, popped.values)}
+            substate = FrameState(names=names)
+            result = interpret_subroutine(program=program, subroutine=subsubroutine, init_state=substate)
+            state = replace(next_state, stack=next_state.stack+(result,), )
         else:
             raise ValueError(f"Op {op.op_code} not legal inside subroutines")
         frame_history.append(state)
@@ -30,4 +34,4 @@ def interpret_subroutine(program: Program, subroutine: str) -> StackValue:
     return next_state.return_value if next_state.return_value is not None else 0
 
 def interpret_program(program: Program) -> StackValue:
-    return interpret_subroutine(program, 'main')
+    return interpret_subroutine(program, program.subroutines['main'], init_state=FrameState())

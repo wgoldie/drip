@@ -3,11 +3,12 @@ import typing
 from basetypes import TaggedValue
 from interpreter import interpret_subroutine, interpret_program
 from parse import parse_asm_snippet, parse_asm_program
-from program import Program
+from program import Program, Subroutine
 
 
 def test_ops():
-    def test(subroutine: typing.Tuple[ops.SubroutineOp]):
+    def test(ops: typing.Tuple[ops.SubroutineOp]):
+        subroutine = Subroutine(ops=ops, arguments=tuple())
         program = Program(subroutines={'main': subroutine})
         interpret_program(program)
 
@@ -54,7 +55,8 @@ def test_ops():
 
 def test_asm_snippets():
     def test(snippet: str):
-        subroutine = parse_asm_snippet(snippet)
+        ops = parse_asm_snippet(snippet)
+        subroutine = Subroutine(ops=ops, arguments=tuple())
         program = Program(subroutines={'main': subroutine})
         interpret_program(program)
     print('testing asm programs')
@@ -117,6 +119,28 @@ def test_asm():
     CALL_SUBROUTINE f
     POP_TO_NAME x
     PRINT_NAME x
+    END_SUBROUTINE main
+    '''))
+
+    print('inc 5 twice')
+    interpret_program(parse_asm_program('''
+    START_SUBROUTINE inc x
+    PUSH_FROM_NAME x
+    PUSH_FROM_LITERAL int 1
+    BINARY_ADD
+    RETURN
+    END_SUBROUTINE inc
+
+    START_SUBROUTINE main
+    PUSH_FROM_LITERAL int 5
+    CALL_SUBROUTINE inc
+    POP_TO_NAME x
+    PRINT_NAME x
+    PUSH_FROM_NAME x
+    CALL_SUBROUTINE inc
+    POP_TO_NAME x
+    PRINT_NAME x
+
     END_SUBROUTINE main
     '''))
 

@@ -2,7 +2,7 @@ import typing
 from collections import defaultdict
 import ops
 from basetypes import ByteCodeLine
-from program import Program
+from program import Program, Subroutine
 
 def build_ops_lookup() -> typing.Dict[str, ops.ByteCodeOp]:
     lookup = {}
@@ -29,23 +29,26 @@ def parse_asm_snippet(program: str) -> typing.Tuple[ops.ByteCodeOp, ...]:
 
 
 def parse_asm_program(program: str) -> Program:
-    subroutine_to_ops = defaultdict(list)
+    subroutines = {}
     current_subroutine = None
+    current_ops = []
     for op in lex_program(program):
         if isinstance(op, ops.StartSubroutineOp):
             if current_subroutine is not None:
                 raise ValueError('Started a subroutine inside a subroutine')
             else:
-                current_subroutine = op.name
+                current_subroutine = op
         elif isinstance(op, ops.EndSubroutineOp):
             if current_subroutine is None:
                 raise ValueError('Ended a subroutine not inside a subroutine')
             else:
-                assert current_subroutine == op.name, f"ended subroutine {op.name} inside subroutine {current_subroutine}"
+                assert current_subroutine.name == op.name, f"ended subroutine {op.name} inside subroutine {current_subroutine}"
+                subroutines[current_subroutine.name] = Subroutine(ops=current_ops, arguments=current_subroutine.arguments)
                 current_subroutine = None
+                current_ops = []
         elif current_subroutine is not None:
-            subroutine_to_ops[current_subroutine].append(op)
+            current_ops.append(op)
         else:
             raise ValueError(f'Illegal line {line} outside of subroutine')
-    assert subroutine_to_ops['main'] is not None, 'no main subroutine'
-    return Program(subroutines={subroutine: tuple(ops) for subroutine, ops in subroutine_to_ops.items()})
+    assert subroutines['main'] is not None, 'no main subroutine'
+    return Program(subroutines=subroutines)

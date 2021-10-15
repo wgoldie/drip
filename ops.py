@@ -23,12 +23,13 @@ class ByteCodeOp(abc.ABC):
 class StartSubroutineOp(ByteCodeOp):
     op_code: typing.ClassVar[str] = 'START_SUBROUTINE'
     name: Name
+    arguments: typing.Tuple[str]
 
     @classmethod
     def parse_asm(cls, line: ByteCodeLine):
         assert cls.op_code == line.op_code
-        assert len(line.arguments) == 1
-        return cls(name=line.arguments[0])
+        assert len(line.arguments) >= 1
+        return cls(name=line.arguments[0], arguments=line.arguments[1:])
 
 
 @dataclass(frozen=True)
