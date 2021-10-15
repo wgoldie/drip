@@ -37,9 +37,10 @@ class ByteCodeLine:
         return cls(op_code=parts[0], arguments=parts[1:])
 
 @dataclass(frozen=True)
-class ProgramState:
+class FrameState:
     stack: Stack = field(default_factory=tuple)
     names: typing.Dict[Name, StackValue] = field(default_factory=dict)
+    return_set: bool = False
     return_value: typing.Optional[int] = None
     flags: typing.Dict[Name, int] = field(default_factory=dict)
     program_counter: int = 0

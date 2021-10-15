@@ -1,53 +1,21 @@
-# as close to english/pseudocode as possible
-# rigorous: typed, immutable by default
-# apis at all layers (bytecode, ast, different syntaxes)
-from dataclasses import dataclass, replace, field
-import typing
 import ops
-from basetypes import Name, StackValue, Stack, TaggedValue, ProgramState, ByteCodeLine
-
-
-def interpret(lines: typing.Tuple[ops.ByteCodeOp]) -> int:
-    states = [ProgramState()]
-    next_state = states[-1]
-    while next_state.program_counter < len(lines):
-        line = lines[next_state.program_counter]
-        state = line.interpret(next_state)
-        states.append(state)
-        next_state = replace(state, program_counter=state.program_counter+1)
-        # import pprint; pprint.pprint(next_state)
-        # import time; time.sleep(0.1)
-    return next_state.return_value if next_state.return_value is not None else 0
-
-def build_ops_lookup() -> typing.Dict[str, ops.ByteCodeOp]:
-    lookup = {}
-    for op in ops.OPS:
-        assert op.op_code not in lookup
-        lookup[op.op_code] = op
-    return lookup
-
-
-def parse_asm(program: str) -> typing.Tuple[ops.ByteCodeOp]:
-    ops_lookup = build_ops_lookup()
-    raw_lines = program.split('\n')
-    clean_lines = (line.strip() for line in raw_lines)
-    nonempty_lines = (line for line in clean_lines if len(line) > 0)
-
-    ops = []
-    for line in nonempty_lines:
-        byte_code_line = ByteCodeLine.lex_asm(line)
-        op_type = ops_lookup[byte_code_line.op_code]
-        op = op_type.parse_asm(byte_code_line)
-        ops.append(op)
-    return ops
+import typing
+from basetypes import TaggedValue
+from interpreter import interpret_subroutine, interpret_program
+from parse import parse_asm_snippet, parse_asm_program
+from program import Program
 
 
 def test_ops():
+    def test(subroutine: typing.Tuple[ops.SubroutineOp]):
+        program = Program(subroutines={'main': subroutine})
+        interpret_program(program)
+
     print('testing ops programs')
     print('noop')
-    interpret((ops.NoopOp(),))
+    sr1 = test((ops.NoopOp(),))
     print('2 + 3 (a)')
-    interpret((
+    test((
         ops.PushFromLiteralOp(value=TaggedValue(tag=int, value=2)),
         ops.PushFromLiteralOp(value=TaggedValue(tag=int, value=3)),
         ops.BinaryAddOp(),
@@ -55,7 +23,7 @@ def test_ops():
         ops.PrintNameOp(name='x')
     ))
     print('2 + 3 (b)')
-    interpret((
+    test((
         ops.StoreFromLiteralOp(name = 'x', value=TaggedValue(tag=int, value=2)),
         ops.StoreFromLiteralOp(name='y', value=TaggedValue(tag=int, value=3)),
         ops.PushFromNameOp(name='x'),
@@ -65,7 +33,7 @@ def test_ops():
         ops.PrintNameOp(name='x')
     ))
     print('3 * 4')
-    interpret((
+    test((
         ops.StoreFromLiteralOp(name = 'x', value=TaggedValue(tag=int, value=0)),
         ops.StoreFromLiteralOp(name='c', value=TaggedValue(tag=int, value=3)),
         ops.SetFlagOp(flag='start'),
@@ -84,22 +52,26 @@ def test_ops():
 
 
 
-def test_asm():
+def test_asm_snippets():
+    def test(snippet: str):
+        subroutine = parse_asm_snippet(snippet)
+        program = Program(subroutines={'main': subroutine})
+        interpret_program(program)
     print('testing asm programs')
     print('noop')
-    interpret(parse_asm('''
+    test('''
     NOOP
-    '''))
+    ''')
     print('2 + 3 (a)')
-    interpret(parse_asm('''
+    test('''
     PUSH_FROM_LITERAL int 2
     PUSH_FROM_LITERAL int 3
     BINARY_ADD
     POP_TO_NAME x
     PRINT_NAME x
-    '''))
+    ''')
     print('2 + 3 (b)')
-    interpret(parse_asm('''
+    test('''
     STORE_FROM_LITERAL x int 2
     STORE_FROM_LITERAL y int 3
     PUSH_FROM_NAME x
@@ -107,9 +79,9 @@ def test_asm():
     BINARY_ADD
     POP_TO_NAME z
     PRINT_NAME z
-    '''))
+    ''')
     print('3 * 4')
-    interpret(parse_asm('''
+    test('''
         STORE_FROM_LITERAL x int 0
         STORE_FROM_LITERAL c int 3
         SET_FLAG start
@@ -124,8 +96,31 @@ def test_asm():
         PUSH_FROM_NAME c
         BRANCH_TO_FLAG start
         PRINT_NAME x
+    ''')
+
+
+def test_asm():
+    print('asm prog')
+    interpret_program(parse_asm_program('''
+    START_SUBROUTINE main
+    STORE_FROM_LITERAL x int 2
+    PRINT_NAME x
+    END_SUBROUTINE main
+    '''))
+    interpret_program(parse_asm_program('''
+    START_SUBROUTINE f
+    PUSH_FROM_LITERAL int 4
+    RETURN
+    END_SUBROUTINE f
+
+    START_SUBROUTINE main
+    CALL_SUBROUTINE f
+    POP_TO_NAME x
+    PRINT_NAME x
+    END_SUBROUTINE main
     '''))
 
 if __name__ == "__main__":
     test_ops()
+    test_asm_snippets()
     test_asm()
