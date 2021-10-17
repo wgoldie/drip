@@ -22,7 +22,7 @@ def interpret_subroutine(program: Program, subroutine: Subroutine, init_state: F
             subsubroutine = program.subroutines[line.name]
             popped = pop_n(next_state.stack, len(subsubroutine.arguments))
             names={argument_name: value for argument_name, value in zip(subsubroutine.arguments, popped.values)}
-            substate = FrameState(names=names)
+            substate = FrameState(names=names, structures=program.structures)
             result = interpret_subroutine(program=program, subroutine=subsubroutine, init_state=substate)
             state = replace(next_state, stack=next_state.stack+(result,), )
         else:
@@ -34,4 +34,4 @@ def interpret_subroutine(program: Program, subroutine: Subroutine, init_state: F
     return next_state.return_value if next_state.return_value is not None else 0
 
 def interpret_program(program: Program) -> StackValue:
-    return interpret_subroutine(program, program.subroutines['main'], init_state=FrameState())
+    return interpret_subroutine(program, program.subroutines['main'], init_state=FrameState(structures=program.structures))

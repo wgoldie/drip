@@ -5,6 +5,7 @@ from interpreter import interpret_subroutine, interpret_program
 from parse import parse_asm_snippet, parse_asm_program
 from program import Program, Subroutine
 import drip_ast as ast
+from compile_ast import compile_ast
 
 
 def test_ops():
@@ -148,7 +149,7 @@ def test_asm():
 def test_ast():
     print('ast')
     ast_a = ast.Program(
-        bits=(
+        structure_definitions=(
             ast.StructureDefinition(
                 name='Point',
                 fields=(
@@ -162,13 +163,15 @@ def test_ast():
                     ast.StructureFieldDefinition(name='start', type_name='Point'),
                     ast.StructureFieldDefinition(name='end', type_name='Point'),
                 ),
-            ),
+           ),
+        ),
+        function_definitions=(
             ast.FunctionDefinition(
                 name='manhattan_length',
                 arguments={'line': 'Line'},
                 procedure=(
                     ast.ReturnStatement(
-                        value=ast.BinaryOperatorExpression(
+                        expression=ast.BinaryOperatorExpression(
                             operator=ast.BinaryOperator.ADD,
                             lhs=ast.BinaryOperatorExpression(
                                 operator=ast.BinaryOperator.ADD,
@@ -218,7 +221,7 @@ def test_ast():
                             type_name='Point',
                             arguments={
                                 'x': ast.LiteralExpression(value=0.),
-                                'x': ast.LiteralExpression(value=0.),
+                                'y': ast.LiteralExpression(value=0.),
                             }
                         )
                     ),
@@ -227,8 +230,8 @@ def test_ast():
                         expression=ast.ConstructionExpression(
                             type_name='Point',
                             arguments={
-                                'x': ast.LiteralExpression(value=0.),
-                                'x': ast.LiteralExpression(value=0.),
+                                'x': ast.LiteralExpression(value=1.),
+                                'y': ast.LiteralExpression(value=1.),
                             }
                         )
                     ),
@@ -252,12 +255,13 @@ def test_ast():
                         )
                     ),
                     ast.ReturnStatement(
-                        value=ast.VariableReferenceExpression(name='l'),
+                        expression=ast.VariableReferenceExpression(name='l'),
                     ),
                 )
-            )
+            ),
         )
     )
+    print(interpret_program(compile_ast(ast_a)))
 
 
 

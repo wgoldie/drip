@@ -2,7 +2,7 @@ import abc
 from dataclasses import dataclass, field, replace
 from enum import Enum, auto
 import typing
-from basetypes import Name, StackValue, FrameState, TaggedValue, ByteCodeLine
+from basetypes import Name, StackValue, FrameState, TaggedValue, ByteCodeLine, StructureInstance
 from util import pop, pop_n
 
 def no_default():
@@ -212,6 +212,54 @@ class PrintNameOp(SubroutineOp):
         return state
 
 @dataclass(frozen=True)
+class ConstructStructureOp(SubroutineOp):
+    op_code: typing.ClassVar[str] = 'CONSTRUCT_STRUCTURE'
+    structure: Name
+    
+    @classmethod
+    def parse_asm(cls, line: ByteCodeLine):
+        assert cls.op_code == line.op_code
+        assert len(line.arguments) == 1
+        return cls(name=line.arguments[0])
+
+    def interpret(self, state: FrameState) -> FrameState:
+        structure = state.structures[self.structure]
+        popped = pop_n(stack=state.stack, n=len(structure.fields))
+        instance = StructureInstance(
+            structure=structure,
+            field_values={
+                field.name: value
+                for field, value
+                in zip(structure.fields, popped.values)
+            },
+        )
+
+        return replace(
+            state,
+            stack=popped.stack + (instance,),
+        )
+
+@dataclass(frozen=True)
+class PopAndPushPropertyOp(SubroutineOp):
+    op_code: typing.ClassVar[str] = 'POP_AND_PUSH_PROPERTY'
+    property: Name
+    
+    @classmethod
+    def parse_asm(cls, line: ByteCodeLine):
+        assert cls.op_code == line.op_code
+        assert len(line.arguments) == 1
+        return cls(name=line.arguments[0])
+
+    def interpret(self, state: FrameState) -> FrameState:
+        popped = pop(stack=state.stack)
+        assert isinstance(popped.value, StructureInstance)
+
+        return replace(
+            state,
+            stack=popped.stack + (popped.value.field_values[self.property],),
+        )
+
+@dataclass(frozen=True)
 class SetFlagOp(SubroutineOp):
     op_code: typing.ClassVar[str] = 'SET_FLAG'
     flag: Name
@@ -262,4 +310,6 @@ OPS = (
     PrintNameOp,
     SetFlagOp,
     BranchToFlagOp,
-    ReturnOp)
+    ReturnOp,
+    ConstructStructureOp,
+    PopAndPushPropertyOp)

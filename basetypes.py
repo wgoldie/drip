@@ -1,5 +1,6 @@
 import typing
 from dataclasses import dataclass, field
+import drip_ast as ast
 
 
 T = typing.TypeVar('T')
@@ -20,10 +21,16 @@ class TaggedValue(typing.Generic[T]):
         return cls(tag=tag, value=tag(value_literal))
 
 
-StackValue = typing.Union[TaggedValue[int]]
+StackValue = typing.Union[TaggedValue[int], 'StructureInstance']
 Stack = typing.Tuple[StackValue, ...]
 OpArg = typing.Union[StackValue]
 Name = str
+
+
+@dataclass
+class StructureInstance:
+    structure: ast.StructureDefinition
+    field_values: typing.Dict[str, StackValue]
 
 @dataclass(frozen=True)
 class ByteCodeLine:
@@ -44,3 +51,4 @@ class FrameState:
     return_value: typing.Optional[int] = None
     flags: typing.Dict[Name, int] = field(default_factory=dict)
     program_counter: int = 0
+    structures: typing.Dict[str, ast.StructureDefinition] = field(default_factory={})

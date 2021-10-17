@@ -27,6 +27,7 @@ class PropertyAccessExpression:
 
 class BinaryOperator(enum.Enum):
     ADD = enum.auto()
+    SUBTRACT = enum.auto()
 
 @dataclass(frozen=True)
 class BinaryOperatorExpression:
@@ -43,7 +44,7 @@ Expression = typing.Union[
 
 @dataclass(frozen=True)
 class ReturnStatement:
-    value: 'Expression'
+    expression: 'Expression'
 
 @dataclass(frozen=True)
 class AssignmentStatement:
@@ -51,8 +52,6 @@ class AssignmentStatement:
     expression: Expression
 
 Statement = typing.Union[AssignmentStatement, ReturnStatement]
-
-
 
 @dataclass(frozen=True)
 class FunctionDefinition:
@@ -73,4 +72,5 @@ class StructureDefinition:
 
 @dataclass(frozen=True)
 class Program:
-    bits: typing.Tuple[typing.Union[StructureDefinition, FunctionDefinition], ...]
+    structure_definitions: typing.Tuple[StructureDefinition, ...]
+    function_definitions: typing.Tuple[FunctionDefinition, ...]
