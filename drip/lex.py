@@ -4,8 +4,7 @@ tokens = (
     'NUMBER',
     'LPAREN',
     'RPAREN',
-    'SNAKE_NAME',
-    'CAMEL_NAME',
+    'RETURN',
     'COLON',
     'ARROW',
     'PERIOD',
@@ -15,11 +14,22 @@ tokens = (
     'EQUALS',
     'FUNCTION',
     'STRUCTURE',
+    'SNAKE_NAME',
+    'CAMEL_NAME',
 )
 
 
-t_STRUCTURE = r'structure'
-t_FUNCTION = r'function'
+def t_STRUCTURE(t):
+    r'structure'
+    return t
+
+def t_FUNCTION(t):
+    r'function'
+    return t
+
+def t_RETURN(t):
+    r'return'
+    return t
 
 t_LPAREN = r'\('
 t_RPAREN = r'\)'
@@ -32,7 +42,7 @@ t_PLUS = r'\+'
 t_EQUALS = r'='
 
 def t_NUMBER(t):
-    r'\d+(\.\d+)?'
+    r'\d+(\.\d*)?'
     t.value = float(t.value)
     return t
 

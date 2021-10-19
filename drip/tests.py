@@ -27,32 +27,32 @@ structure Line (
   end: Point,
 )
 
-function manhattan_length (line: Line) -> float (
+function manhattan_length (line: Line,) -> Float (
   return (line.start.x + line.end.x)+ (line.start.y + line.end.y);
 )
 
-
-function main (
-  origin = Point(x=0., y=0.)
-  one_one = Point(x=1., y=1.)
-  line_a = Line(start=origin, end=one_one)
-  length = length(line_a)
-  return length
+function main () -> Int (
+  origin = Point(x=0.,y=0.,);
+  one_one = Point(x=4.,y=5.,);
+  line_a = Line(start=origin, end=one_one,);
+  length = manhattan_length(line=line_a,);
+  return length;
 )
+
 '''
 
 def test_lex_parse_program(program: str) -> None:
-    lexer.input(program)
-    tokens = [t for t in lexer]
-    print('lex')
-    print(tokens)
-    print('parse')
-    result = parser.parse(program)
-    print(result)
+    print('lex+parse')
+    ast = parser.parse(program)
+    print(ast)
+    print('compile+run')
+    result = interpret_program(compile_ast(ast))
+    print('result', result)
+
 
 def test_lex_parse():
-    test_lex_parse_program(PROGRAM_A)
-    # test_lex_parse_program(PROGRAM_B)
+    # test_lex_parse_program(PROGRAM_A)
+    test_lex_parse_program(PROGRAM_B)
 
 
 def test_ops():
@@ -200,22 +200,22 @@ def test_ast():
             ast.StructureDefinition(
                 name='Point',
                 fields=(
-                    ast.StructureFieldDefinition(name='x', type_name='float'),
-                    ast.StructureFieldDefinition(name='y', type_name='float'),
+                    ast.ArgumentDefinition(name='x', type_name='float'),
+                    ast.ArgumentDefinition(name='y', type_name='float'),
                 ),
             ),
             ast.StructureDefinition(
                 name='Line',
                 fields=(
-                    ast.StructureFieldDefinition(name='start', type_name='Point'),
-                    ast.StructureFieldDefinition(name='end', type_name='Point'),
+                    ast.ArgumentDefinition(name='start', type_name='Point'),
+                    ast.ArgumentDefinition(name='end', type_name='Point'),
                 ),
            ),
         ),
         function_definitions=(
             ast.FunctionDefinition(
                 name='manhattan_length',
-                arguments={'line': 'Line'},
+                arguments=(ast.ArgumentDefinition(name='line', type_name='Line'),),
                 procedure=(
                     ast.ReturnStatement(
                         expression=ast.BinaryOperatorExpression(
@@ -314,7 +314,7 @@ def test_ast():
 
 if __name__ == "__main__":
     test_lex_parse()
-    #test_ops()
-    #test_asm_snippets()
-    #test_asm()
-    #test_ast()
+    test_ops()
+    test_asm_snippets()
+    test_asm()
+    test_ast()

@@ -69,7 +69,7 @@ def compile_function_ast(
             for statement in function.procedure),
             start=tuple(),
         ),
-        arguments=tuple(function.arguments.keys()))
+        arguments=tuple(argument.name for argument in function.arguments))
 
 def compile_ast(program: ast.Program) -> Program:
     structure_lookup = {

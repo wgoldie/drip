@@ -54,23 +54,23 @@ class AssignmentStatement:
 Statement = typing.Union[AssignmentStatement, ReturnStatement]
 
 @dataclass(frozen=True)
-class FunctionDefinition:
-    name: str
-    arguments: typing.Dict[str, str]
-    procedure: typing.Tuple[Statement, ...]
-
-@dataclass(frozen=True)
-class StructureFieldDefinition:
+class ArgumentDefinition:
     name: str
     type_name: str
 
 @dataclass(frozen=True)
+class FunctionDefinition:
+    name: str
+    arguments: typing.Tuple[ArgumentDefinition, ...]
+    procedure: typing.Tuple[Statement, ...]
+
+@dataclass(frozen=True)
 class StructureDefinition:
     name: str
-    fields: typing.Tuple[StructureFieldDefinition, ...]
+    fields: typing.Tuple[ArgumentDefinition, ...]
 
 
 @dataclass(frozen=True)
 class Program:
-    structure_definitions: typing.Tuple[StructureDefinition, ...]
-    function_definitions: typing.Tuple[FunctionDefinition, ...]
+    structure_definitions: typing.Tuple[StructureDefinition, ...] = tuple()
+    function_definitions: typing.Tuple[FunctionDefinition, ...] = tuple()
