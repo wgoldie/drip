@@ -1,11 +1,11 @@
-import ops
 import typing
-from basetypes import TaggedValue
-from interpreter import interpret_subroutine, interpret_program
-from parse import parse_asm_snippet, parse_asm_program
-from program import Program, Subroutine
-import drip_ast as ast
-from compile_ast import compile_ast
+from drip.basetypes import TaggedValue
+import drip.ops as ops
+from drip.interpreter import interpret_subroutine, interpret_program
+from drip.parse import parse_asm_snippet, parse_asm_program
+from drip.program import Program, Subroutine
+import drip.ast as ast
+from drip.compile_ast import compile_ast
 
 
 def test_ops():

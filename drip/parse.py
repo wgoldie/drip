@@ -1,8 +1,8 @@
 import typing
 from collections import defaultdict
-import ops
-from basetypes import ByteCodeLine
-from program import Program, Subroutine
+import drip.ops as ops
+from drip.basetypes import ByteCodeLine
+from drip.program import Program, Subroutine
 
 def build_ops_lookup() -> typing.Dict[str, ops.ByteCodeOp]:
     lookup = {}

@@ -2,8 +2,8 @@ import abc
 from dataclasses import dataclass, field, replace
 from enum import Enum, auto
 import typing
-from basetypes import Name, StackValue, FrameState, TaggedValue, ByteCodeLine, StructureInstance
-from util import pop, pop_n
+from drip.basetypes import Name, StackValue, FrameState, TaggedValue, ByteCodeLine, StructureInstance
+from drip.util import pop, pop_n
 
 def no_default():
     raise ValueError('you must pass a default value for this field')

@@ -1,8 +1,8 @@
 import typing
-import drip_ast as ast
-from basetypes import TaggedValue
-from program import Program, Subroutine
-import ops
+import drip.ast as ast
+from drip.basetypes import TaggedValue
+from drip.program import Program, Subroutine
+import drip.ops as ops
 
 def operator_ops(operator: ast.BinaryOperator) -> typing.Tuple[ops.ByteCodeOp, ...]:
     if operator == ast.BinaryOperator.ADD:

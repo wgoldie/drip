@@ -5,10 +5,10 @@
 from collections import defaultdict
 from dataclasses import dataclass, replace, field
 import typing
-import ops
-from util import pop_n
-from basetypes import Name, StackValue, Stack, TaggedValue, FrameState, ByteCodeLine
-from program import Program, Subroutine
+import drip.ops as ops
+from drip.util import pop_n
+from drip.basetypes import Name, StackValue, Stack, TaggedValue, FrameState, ByteCodeLine
+from drip.program import Program, Subroutine
 
 
 def interpret_subroutine(program: Program, subroutine: Subroutine, init_state: FrameState) -> StackValue:

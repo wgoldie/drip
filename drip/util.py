@@ -1,6 +1,6 @@
 import typing
 from dataclasses import dataclass
-from basetypes import Stack, StackValue
+from drip.basetypes import Stack, StackValue
 
 @dataclass(frozen=True)
 class PopN:

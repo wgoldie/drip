@@ -1,6 +1,6 @@
 import typing
 from dataclasses import dataclass, field
-import drip_ast as ast
+import drip.ast as ast
 
 
 T = typing.TypeVar('T')

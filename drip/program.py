@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 import typing
-import ops
-import drip_ast as ast
+import drip.ops as ops
+import drip.ast as ast
 
 @dataclass(frozen=True)
 class Subroutine:
