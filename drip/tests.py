@@ -2,10 +2,57 @@ import typing
 from drip.basetypes import TaggedValue
 import drip.ops as ops
 from drip.interpreter import interpret_subroutine, interpret_program
-from drip.parse import parse_asm_snippet, parse_asm_program
+from drip.parse_asm import parse_asm_snippet, parse_asm_program
 from drip.program import Program, Subroutine
 import drip.ast as ast
 from drip.compile_ast import compile_ast
+from drip.lex import lexer
+from drip.parse import parser
+
+PROGRAM_A = '''
+structure Point (
+    x: Float,
+    y: Float,
+)
+'''
+
+PROGRAM_B = '''
+structure Point (
+  x: Float,
+  y: Float,
+)
+
+structure Line (
+  start: Point,
+  end: Point,
+)
+
+function manhattan_length (line: Line) -> float (
+  return (line.start.x + line.end.x)+ (line.start.y + line.end.y);
+)
+
+
+function main (
+  origin = Point(x=0., y=0.)
+  one_one = Point(x=1., y=1.)
+  line_a = Line(start=origin, end=one_one)
+  length = length(line_a)
+  return length
+)
+'''
+
+def test_lex_parse_program(program: str) -> None:
+    lexer.input(program)
+    tokens = [t for t in lexer]
+    print('lex')
+    print(tokens)
+    print('parse')
+    result = parser.parse(program)
+    print(result)
+
+def test_lex_parse():
+    test_lex_parse_program(PROGRAM_A)
+    # test_lex_parse_program(PROGRAM_B)
 
 
 def test_ops():
@@ -266,7 +313,8 @@ def test_ast():
 
 
 if __name__ == "__main__":
-    test_ops()
-    test_asm_snippets()
-    test_asm()
-    test_ast()
+    test_lex_parse()
+    #test_ops()
+    #test_asm_snippets()
+    #test_asm()
+    #test_ast()

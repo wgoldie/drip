@@ -1,54 +1,42 @@
 import typing
-from collections import defaultdict
-import drip.ops as ops
-from drip.basetypes import ByteCodeLine
-from drip.program import Program, Subroutine
+import lib.ply.yacc as yacc
+from drip.lex import tokens
+import drip.ast as ast
 
-def build_ops_lookup() -> typing.Dict[str, ops.ByteCodeOp]:
-    lookup = {}
-    for op in ops.OPS:
-        assert op.op_code not in lookup
-        lookup[op.op_code] = op
-    return lookup
+def p_structure_definition(p):
+    '''structure_definition : STRUCTURE CAMEL_NAME LPAREN structure_arguments RPAREN'''
+    p[0] = ast.StructureDefinition(
+        name=p[2],
+        fields=p[4],
+    )
 
-def lex_program(program: str):
-    ops_lookup = build_ops_lookup()
-    raw_lines = program.split('\n')
-    for line in raw_lines:
-        clean_line = line.strip()
-        if len(clean_line) == 0:
-            continue
-        byte_code_line = ByteCodeLine.lex_asm(clean_line)
-        op_type = ops_lookup[byte_code_line.op_code]
-        op = op_type.parse_asm(byte_code_line)
-        yield op
+def p_structure_arguments(p):
+    '''structure_arguments : fieldlist 
+                           | empty'''
+    p[0] = tuple() if isinstance(p[1], Empty) else p[1]
+
+class Empty:
+    pass
+
+def p_empty(p) -> Empty:
+    '''empty :'''
+    return Empty()
+
+def p_fieldlist(p) -> typing.Tuple[ast.StructureFieldDefinition]:
+    '''fieldlist : fieldlisting
+                 | fieldlisting fieldlist'''
+    if len(p) == 2:
+        p[0] = (p[1],)
+    else:
+        p[0] = (p[1],) + p[2]
+
+def p_fieldlisting(p) -> ast.StructureFieldDefinition:
+    '''fieldlisting : SNAKE_NAME COLON CAMEL_NAME COMMA'''
+    p[0] = ast.StructureFieldDefinition(name=p[1], type_name=p[3])
 
 
-def parse_asm_snippet(program: str) -> typing.Tuple[ops.ByteCodeOp, ...]:
-    return list(lex_program(program))
 
+def p_error(p):
+    print('error in input', p)
 
-def parse_asm_program(program: str) -> Program:
-    subroutines = {}
-    current_subroutine = None
-    current_ops = []
-    for op in lex_program(program):
-        if isinstance(op, ops.StartSubroutineOp):
-            if current_subroutine is not None:
-                raise ValueError('Started a subroutine inside a subroutine')
-            else:
-                current_subroutine = op
-        elif isinstance(op, ops.EndSubroutineOp):
-            if current_subroutine is None:
-                raise ValueError('Ended a subroutine not inside a subroutine')
-            else:
-                assert current_subroutine.name == op.name, f"ended subroutine {op.name} inside subroutine {current_subroutine}"
-                subroutines[current_subroutine.name] = Subroutine(ops=current_ops, arguments=current_subroutine.arguments)
-                current_subroutine = None
-                current_ops = []
-        elif current_subroutine is not None:
-            current_ops.append(op)
-        else:
-            raise ValueError(f'Illegal line {line} outside of subroutine')
-    assert subroutines['main'] is not None, 'no main subroutine'
-    return Program(subroutines=subroutines)
+parser = yacc.yacc()
