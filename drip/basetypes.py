@@ -3,13 +3,14 @@ from dataclasses import dataclass, field
 import drip.ast as ast
 
 
-T = typing.TypeVar('T')
-C = typing.TypeVar('C')
+T = typing.TypeVar("T")
+C = typing.TypeVar("C")
+
 
 @dataclass
 class TaggedValue(typing.Generic[T]):
     tag_names: typing.ClassVar[typing.Dict[str, typing.Type]] = {
-        'int': int,
+        "int": int,
     }
 
     tag: typing.Type[T]
@@ -21,7 +22,7 @@ class TaggedValue(typing.Generic[T]):
         return cls(tag=tag, value=tag(value_literal))
 
 
-StackValue = typing.Union[TaggedValue[int], 'StructureInstance']
+StackValue = typing.Union[TaggedValue[int], "StructureInstance"]
 Stack = typing.Tuple[StackValue, ...]
 OpArg = typing.Union[StackValue]
 Name = str
@@ -32,16 +33,17 @@ class StructureInstance:
     structure: ast.StructureDefinition
     field_values: typing.Dict[str, StackValue]
 
+
 @dataclass(frozen=True)
 class ByteCodeLine:
     op_code: str
     arguments: typing.Tuple[str, ...]
 
-
     @classmethod
     def lex_asm(cls: typing.Type[C], line: str) -> C:
-        parts = line.split(' ')
+        parts = line.split(" ")
         return cls(op_code=parts[0], arguments=parts[1:])
+
 
 @dataclass(frozen=True)
 class FrameState:
