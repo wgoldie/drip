@@ -9,7 +9,7 @@ class PopN:
     values: Stack
 
 
-def pop_n(stack: typing.Tuple[StackValue], n: int) -> PopN:
+def pop_n(stack: typing.Tuple[StackValue, ...], n: int) -> PopN:
     assert n >= 0
     assert len(stack) >= n
     return PopN(stack=stack[:-n], values=stack[-n:])

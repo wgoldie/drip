@@ -45,13 +45,16 @@ def prepare_stack(expression: ast.Expression) -> typing.Tuple[ops.ByteCodeOp, ..
         )
     elif isinstance(expression, ast.FunctionCallExpression):
         # need to fix out of order kwargs
-        return sum(
-            (
-                prepare_stack(argument_expression)
-                for argument_expression in expression.arguments.values()
-            ),
-            start=tuple(),
-        ) + (ops.CallSubroutineOp(name=expression.function_name),)
+        return (
+            sum(
+                (
+                    prepare_stack(argument_expression)
+                    for argument_expression in expression.arguments.values()
+                ),
+                start=tuple(),
+            )
+            + (ops.CallSubroutineOp(name=expression.function_name),)
+        )
     else:
         raise ValueError(f"Expression {expression} has unhandled type")
     return tuple()

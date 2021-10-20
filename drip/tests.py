@@ -51,20 +51,20 @@ def test_lex_parse_program(program: str) -> None:
     print("result", result)
 
 
-def test_lex_parse():
+def test_lex_parse() -> None:
     # test_lex_parse_program(PROGRAM_A)
     test_lex_parse_program(PROGRAM_B)
 
 
-def test_ops():
-    def test(ops: typing.Tuple[ops.SubroutineOp]):
+def test_ops() -> None:
+    def test(ops: typing.Tuple[ops.SubroutineOp, ...]) -> None:
         subroutine = Subroutine(ops=ops, arguments=tuple())
         program = Program(subroutines={"main": subroutine})
         interpret_program(program)
 
     print("testing ops programs")
     print("noop")
-    sr1 = test((ops.NoopOp(),))
+    test((ops.NoopOp(),))
     print("2 + 3 (a)")
     test(
         (
@@ -108,8 +108,8 @@ def test_ops():
     )
 
 
-def test_asm_snippets():
-    def test(snippet: str):
+def test_asm_snippets() -> None:
+    def test(snippet: str) -> None:
         ops = parse_asm_snippet(snippet)
         subroutine = Subroutine(ops=ops, arguments=tuple())
         program = Program(subroutines={"main": subroutine})
@@ -165,7 +165,7 @@ def test_asm_snippets():
     )
 
 
-def test_asm():
+def test_asm() -> None:
     print("asm prog")
     interpret_program(
         parse_asm_program(
@@ -221,7 +221,7 @@ def test_asm():
     )
 
 
-def test_ast():
+def test_ast() -> None:
     print("ast")
     ast_a = ast.Program(
         structure_definitions=(
@@ -296,7 +296,7 @@ def test_ast():
             ),
             ast.FunctionDefinition(
                 name="main",
-                arguments={},
+                arguments=tuple(),
                 procedure=(
                     ast.AssignmentStatement(
                         variable_name="origin",

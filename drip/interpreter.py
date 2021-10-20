@@ -45,12 +45,16 @@ def interpret_subroutine(
                 stack=next_state.stack + (result,),
             )
         else:
-            raise ValueError(f"Op {op.op_code} not legal inside subroutines")
+            raise ValueError(f"Op {line.op_code} not legal inside subroutines")
         frame_history.append(state)
         next_state = replace(state, program_counter=state.program_counter + 1)
         # import pprint; pprint.pprint(next_state)
         # import time; time.sleep(0.1)
-    return next_state.return_value if next_state.return_value is not None else 0
+    return (
+        next_state.return_value
+        if next_state.return_value is not None
+        else TaggedValue(tag=int, value=0)
+    )
 
 
 def interpret_program(program: Program) -> StackValue:

@@ -13,15 +13,16 @@ from drip.basetypes import (
 from drip.util import pop, pop_n
 
 
-def no_default():
+def no_default() -> None:
     raise ValueError("you must pass a default value for this field")
 
 
 C = typing.TypeVar("C")
 
 
-@dataclass(frozen=True)
 class ByteCodeOp(abc.ABC):
+    op_code: typing.ClassVar[str]
+
     @classmethod
     @abc.abstractmethod
     def parse_asm(cls: typing.Type[C], line: ByteCodeLine) -> C:
@@ -32,10 +33,10 @@ class ByteCodeOp(abc.ABC):
 class StartSubroutineOp(ByteCodeOp):
     op_code: typing.ClassVar[str] = "START_SUBROUTINE"
     name: Name
-    arguments: typing.Tuple[str]
+    arguments: typing.Tuple[str, ...]
 
     @classmethod
-    def parse_asm(cls, line: ByteCodeLine):
+    def parse_asm(cls, line: ByteCodeLine) -> "StartSubroutineOp":
         assert cls.op_code == line.op_code
         assert len(line.arguments) >= 1
         return cls(name=line.arguments[0], arguments=line.arguments[1:])
@@ -47,7 +48,7 @@ class EndSubroutineOp(ByteCodeOp):
     name: Name
 
     @classmethod
-    def parse_asm(cls, line: ByteCodeLine):
+    def parse_asm(cls, line: ByteCodeLine) -> "EndSubroutineOp":
         assert cls.op_code == line.op_code
         assert len(line.arguments) == 1
         return cls(name=line.arguments[0])
@@ -59,13 +60,12 @@ class CallSubroutineOp(ByteCodeOp):
     name: Name
 
     @classmethod
-    def parse_asm(cls, line: ByteCodeLine):
+    def parse_asm(cls, line: ByteCodeLine) -> "CallSubroutineOp":
         assert cls.op_code == line.op_code
         assert len(line.arguments) == 1
         return cls(name=line.arguments[0])
 
 
-@dataclass(frozen=True)
 class SubroutineOp(ByteCodeOp, abc.ABC):
     @abc.abstractmethod
     def interpret(self, state: FrameState) -> FrameState:
@@ -77,7 +77,7 @@ class ReturnOp(SubroutineOp):
     op_code: typing.ClassVar[str] = "RETURN"
 
     @classmethod
-    def parse_asm(cls, line: ByteCodeLine):
+    def parse_asm(cls, line: ByteCodeLine) -> "ReturnOp":
         assert cls.op_code == line.op_code
         assert len(line.arguments) == 0
         return cls()
@@ -95,7 +95,7 @@ class NoopOp(SubroutineOp):
     op_code: typing.ClassVar[str] = "NOOP"
 
     @classmethod
-    def parse_asm(cls, line: ByteCodeLine):
+    def parse_asm(cls, line: ByteCodeLine) -> "NoopOp":
         assert cls.op_code == line.op_code
         assert len(line.arguments) == 0
         return cls()
@@ -110,7 +110,7 @@ class PushFromNameOp(SubroutineOp):
     name: Name
 
     @classmethod
-    def parse_asm(cls, line: ByteCodeLine):
+    def parse_asm(cls, line: ByteCodeLine) -> "PushFromNameOp":
         assert cls.op_code == line.op_code
         assert len(line.arguments) == 1
         return cls(name=line.arguments[0])
@@ -125,7 +125,7 @@ class PopToNameOp(SubroutineOp):
     name: Name
 
     @classmethod
-    def parse_asm(cls, line: ByteCodeLine):
+    def parse_asm(cls, line: ByteCodeLine) -> "PopToNameOp":
         assert cls.op_code == line.op_code
         assert len(line.arguments) == 1
         return cls(name=line.arguments[0])
@@ -143,7 +143,7 @@ class PushFromLiteralOp(SubroutineOp):
     value: StackValue
 
     @classmethod
-    def parse_asm(cls, line: ByteCodeLine):
+    def parse_asm(cls, line: ByteCodeLine) -> "PushFromLiteralOp":
         assert cls.op_code == line.op_code
         assert len(line.arguments) == 2
         return cls(
@@ -163,7 +163,7 @@ class StoreFromLiteralOp(SubroutineOp):
     value: StackValue
 
     @classmethod
-    def parse_asm(cls, line: ByteCodeLine):
+    def parse_asm(cls, line: ByteCodeLine) -> "StoreFromLiteralOp":
         assert cls.op_code == line.op_code
         assert len(line.arguments) == 3
         return cls(
@@ -182,7 +182,7 @@ class BinaryAddOp(SubroutineOp):
     op_code: typing.ClassVar[str] = "BINARY_ADD"
 
     @classmethod
-    def parse_asm(cls, line: ByteCodeLine):
+    def parse_asm(cls, line: ByteCodeLine) -> "BinaryAddOp":
         assert cls.op_code == line.op_code
         assert len(line.arguments) == 0
         return cls()
@@ -211,20 +211,24 @@ class BinarySubtractOp(SubroutineOp):
     op_code: typing.ClassVar[str] = "BINARY_SUBTRACT"
 
     @classmethod
-    def parse_asm(cls, line: ByteCodeLine):
+    def parse_asm(cls, line: ByteCodeLine) -> "BinarySubtractOp":
         assert cls.op_code == line.op_code
         assert len(line.arguments) == 0
         return cls()
 
     def interpret(self, state: FrameState) -> FrameState:
         popped = pop_n(state.stack, 2)
+        lhs = popped.values[0]
+        rhs = popped.values[1]
+        assert isinstance(lhs, TaggedValue)
+        assert isinstance(rhs, TaggedValue)
         return replace(
             state,
             stack=popped.stack
             + (
                 TaggedValue(
-                    tag=popped.values[0].tag,
-                    value=popped.values[1].value - popped.values[0].value,
+                    tag=lhs.tag,
+                    value=lhs.value - rhs.value,
                 ),
             ),
         )
@@ -236,13 +240,13 @@ class PrintNameOp(SubroutineOp):
     name: Name
 
     @classmethod
-    def parse_asm(cls, line: ByteCodeLine):
+    def parse_asm(cls, line: ByteCodeLine) -> "PrintNameOp":
         assert cls.op_code == line.op_code
         assert len(line.arguments) == 1
         return cls(name=line.arguments[0])
 
     def interpret(self, state: FrameState) -> FrameState:
-        print(state.names[self.name].value)
+        print(state.names[self.name])
         return state
 
 
@@ -252,10 +256,10 @@ class ConstructStructureOp(SubroutineOp):
     structure: Name
 
     @classmethod
-    def parse_asm(cls, line: ByteCodeLine):
+    def parse_asm(cls, line: ByteCodeLine) -> "ConstructStructureOp":
         assert cls.op_code == line.op_code
         assert len(line.arguments) == 1
-        return cls(name=line.arguments[0])
+        return cls(structure=line.arguments[0])
 
     def interpret(self, state: FrameState) -> FrameState:
         structure = state.structures[self.structure]
@@ -280,10 +284,10 @@ class PopAndPushPropertyOp(SubroutineOp):
     property: Name
 
     @classmethod
-    def parse_asm(cls, line: ByteCodeLine):
+    def parse_asm(cls, line: ByteCodeLine) -> "PopAndPushPropertyOp":
         assert cls.op_code == line.op_code
         assert len(line.arguments) == 1
-        return cls(name=line.arguments[0])
+        return cls(property=line.arguments[0])
 
     def interpret(self, state: FrameState) -> FrameState:
         popped = pop(stack=state.stack)
@@ -301,7 +305,7 @@ class SetFlagOp(SubroutineOp):
     flag: Name
 
     @classmethod
-    def parse_asm(cls, line: ByteCodeLine):
+    def parse_asm(cls, line: ByteCodeLine) -> "SetFlagOp":
         assert cls.op_code == line.op_code
         assert len(line.arguments) == 1
         return cls(flag=line.arguments[0])
@@ -317,7 +321,7 @@ class BranchToFlagOp(SubroutineOp):
     flag: Name
 
     @classmethod
-    def parse_asm(cls, line: ByteCodeLine):
+    def parse_asm(cls, line: ByteCodeLine) -> "BranchToFlagOp":
         assert cls.op_code == line.op_code
         assert len(line.arguments) == 1
         return cls(flag=line.arguments[0])
@@ -325,6 +329,7 @@ class BranchToFlagOp(SubroutineOp):
     def interpret(self, state: FrameState) -> FrameState:
         assert self.flag in state.flags
         popped = pop(state.stack)
+        assert isinstance(popped.value, TaggedValue)
         return replace(
             state,
             stack=popped.stack,
@@ -334,7 +339,7 @@ class BranchToFlagOp(SubroutineOp):
         )
 
 
-OPS = (
+OPS: typing.Tuple[typing.Type[ByteCodeOp], ...] = (
     StartSubroutineOp,
     EndSubroutineOp,
     CallSubroutineOp,

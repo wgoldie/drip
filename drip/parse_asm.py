@@ -5,7 +5,7 @@ from drip.basetypes import ByteCodeLine
 from drip.program import Program, Subroutine
 
 
-def build_ops_lookup() -> typing.Dict[str, ops.ByteCodeOp]:
+def build_ops_lookup() -> typing.Dict[str, typing.Type[ops.ByteCodeOp]]:
     lookup = {}
     for op in ops.OPS:
         assert op.op_code not in lookup
@@ -13,7 +13,7 @@ def build_ops_lookup() -> typing.Dict[str, ops.ByteCodeOp]:
     return lookup
 
 
-def lex_program(program: str):
+def lex_program(program: str) -> typing.Generator[ops.ByteCodeOp, None, None]:
     ops_lookup = build_ops_lookup()
     raw_lines = program.split("\n")
     for line in raw_lines:
@@ -27,13 +27,13 @@ def lex_program(program: str):
 
 
 def parse_asm_snippet(program: str) -> typing.Tuple[ops.ByteCodeOp, ...]:
-    return list(lex_program(program))
+    return tuple(lex_program(program))
 
 
 def parse_asm_program(program: str) -> Program:
     subroutines = {}
     current_subroutine = None
-    current_ops = []
+    current_ops: typing.List[ops.ByteCodeOp] = []
     for op in lex_program(program):
         if isinstance(op, ops.StartSubroutineOp):
             if current_subroutine is not None:
@@ -48,13 +48,13 @@ def parse_asm_program(program: str) -> Program:
                     current_subroutine.name == op.name
                 ), f"ended subroutine {op.name} inside subroutine {current_subroutine}"
                 subroutines[current_subroutine.name] = Subroutine(
-                    ops=current_ops, arguments=current_subroutine.arguments
+                    ops=tuple(current_ops), arguments=current_subroutine.arguments
                 )
                 current_subroutine = None
                 current_ops = []
         elif current_subroutine is not None:
             current_ops.append(op)
         else:
-            raise ValueError(f"Illegal line {line} outside of subroutine")
+            raise ValueError(f"Illegal line {op} outside of subroutine")
     assert subroutines["main"] is not None, "no main subroutine"
     return Program(subroutines=subroutines)

@@ -49,6 +49,7 @@ Expression = typing.Union[
     LiteralExpression,
     PropertyAccessExpression,
     BinaryOperatorExpression,
+    FunctionCallExpression,
 ]
 
 
