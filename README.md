@@ -2,4 +2,4 @@
 
 scripting language + runtime
 
-for now just a toy implementation of an intepreter and bytecode/asm 
+simple implementation of vm/interpreter, bytecode, asm, ast, and (generated) lexer/parser
