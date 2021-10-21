@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from functools import cached_property
 import typing
 import enum
 
@@ -90,3 +91,17 @@ class StructureDefinition:
 class Program:
     structure_definitions: typing.Tuple[StructureDefinition, ...] = tuple()
     function_definitions: typing.Tuple[FunctionDefinition, ...] = tuple()
+
+    @cached_property
+    def structure_lookup(self) -> typing.Dict[str, StructureDefinition]:
+        return {
+            structure_definition.name: structure_definition
+            for structure_definition in self.structure_definitions
+        }
+
+    @cached_property
+    def function_lookup(self) -> typing.Dict[str, FunctionDefinition]:
+        return {
+            function_definition.name: function_definition 
+            for function_definition in self.function_definitions
+        }

@@ -13,15 +13,34 @@ def operator_ops(operator: ast.BinaryOperator) -> typing.Tuple[ops.ByteCodeOp, .
     else:
         raise ValueError(f"Unhandled operator {operator}")
 
+def order_arguments(
+    definition: typing.Tuple[ast.ArgumentDefinition, ...],
+    values: typing.Dict[str, ast.Expression],
+) -> typing.Generator[ast.Expression, None, None]:
+    order = {
+        argument.name: i
+        for i, argument
+        in enumerate(definition)
+    }
+    ordered_value_entries = sorted(
+        list(values.items()),
+        key=lambda value: order[value[0]]
+    )
+    return (expression for _, expression in ordered_value_entries)
 
-def prepare_stack(expression: ast.Expression) -> typing.Tuple[ops.ByteCodeOp, ...]:
+
+def prepare_stack(
+    program: ast.Program,
+    expression: ast.Expression,
+) -> typing.Tuple[ops.ByteCodeOp, ...]:
     if isinstance(expression, ast.ConstructionExpression):
-        # need to fix out of order keywords
+        structure = program.structure_lookup[expression.type_name]
         return (
             sum(
                 (
-                    prepare_stack(argument_expression)
-                    for argument_expression in expression.arguments.values()
+                    prepare_stack(program, argument_expression)
+                    for argument_expression 
+                    in order_arguments(structure.fields, expression.arguments)
                 ),
                 start=tuple(),
             )
@@ -34,22 +53,23 @@ def prepare_stack(expression: ast.Expression) -> typing.Tuple[ops.ByteCodeOp, ..
             ops.PushFromLiteralOp(value=TaggedValue(tag=float, value=expression.value)),
         )
     elif isinstance(expression, ast.PropertyAccessExpression):
-        return prepare_stack(expression.entity) + (
+        return prepare_stack(program, expression.entity) + (
             ops.PopAndPushPropertyOp(property=expression.property_name),
         )
     elif isinstance(expression, ast.BinaryOperatorExpression):
         return (
-            prepare_stack(expression.lhs)
-            + prepare_stack(expression.rhs)
+            prepare_stack(program, expression.lhs)
+            + prepare_stack(program, expression.rhs)
             + operator_ops(expression.operator)
         )
     elif isinstance(expression, ast.FunctionCallExpression):
-        # need to fix out of order kwargs
+        function = program.function_lookup[expression.function_name]
         return (
             sum(
                 (
-                    prepare_stack(argument_expression)
-                    for argument_expression in expression.arguments.values()
+                    prepare_stack(program, argument_expression)
+                    for argument_expression
+                    in order_arguments(function.arguments, expression.arguments)
                 ),
                 start=tuple(),
             )
@@ -61,25 +81,27 @@ def prepare_stack(expression: ast.Expression) -> typing.Tuple[ops.ByteCodeOp, ..
 
 
 def compile_statement_ast(
+    program: ast.Program,
     statement: ast.Statement,
 ) -> typing.Tuple[ops.ByteCodeOp, ...]:
     if isinstance(statement, ast.AssignmentStatement):
-        return prepare_stack(statement.expression) + (
+        return prepare_stack(program, statement.expression) + (
             ops.PopToNameOp(name=statement.variable_name),
         )
     elif isinstance(statement, ast.ReturnStatement):
-        return prepare_stack(statement.expression) + (ops.ReturnOp(),)
+        return prepare_stack(program, statement.expression) + (ops.ReturnOp(),)
     else:
         raise ValueError(f"Statement {statement} has unhandled type")
 
 
 def compile_function_ast(
+    program: ast.Program,
     function: ast.FunctionDefinition,
-    structure_lookup: typing.Dict[str, ast.StructureDefinition],
 ) -> Subroutine:
     return Subroutine(
         ops=sum(
-            (compile_statement_ast(statement) for statement in function.procedure),
+            (compile_statement_ast(program, statement)
+                for statement in function.procedure),
             start=tuple(),
         ),
         arguments=tuple(argument.name for argument in function.arguments),
@@ -87,13 +109,8 @@ def compile_function_ast(
 
 
 def compile_ast(program: ast.Program) -> Program:
-    structure_lookup = {
-        structure_definition.name: structure_definition
-        for structure_definition in program.structure_definitions
-    }
-
     subroutines = {
-        function.name: compile_function_ast(function, structure_lookup)
+        function.name: compile_function_ast(program, function)
         for function in program.function_definitions
     }
 
@@ -101,5 +118,5 @@ def compile_ast(program: ast.Program) -> Program:
 
     return Program(
         subroutines=subroutines,
-        structures=structure_lookup,
+        structures=program.structure_lookup,
     )
