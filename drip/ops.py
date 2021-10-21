@@ -218,8 +218,8 @@ class BinarySubtractOp(SubroutineOp):
 
     def interpret(self, state: FrameState) -> FrameState:
         popped = pop_n(state.stack, 2)
-        lhs = popped.values[0]
-        rhs = popped.values[1]
+        lhs = popped.values[1]
+        rhs = popped.values[0]
         assert isinstance(lhs, TaggedValue)
         assert isinstance(rhs, TaggedValue)
         return replace(
@@ -330,6 +330,7 @@ class BranchToFlagOp(SubroutineOp):
         assert self.flag in state.flags
         popped = pop(state.stack)
         assert isinstance(popped.value, TaggedValue)
+        print(popped.value)
         return replace(
             state,
             stack=popped.stack,
