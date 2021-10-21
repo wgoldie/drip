@@ -13,18 +13,14 @@ def operator_ops(operator: ast.BinaryOperator) -> typing.Tuple[ops.ByteCodeOp, .
     else:
         raise ValueError(f"Unhandled operator {operator}")
 
+
 def order_arguments(
     definition: typing.Tuple[ast.ArgumentDefinition, ...],
     values: typing.Dict[str, ast.Expression],
 ) -> typing.Generator[ast.Expression, None, None]:
-    order = {
-        argument.name: i
-        for i, argument
-        in enumerate(definition)
-    }
+    order = {argument.name: i for i, argument in enumerate(definition)}
     ordered_value_entries = sorted(
-        list(values.items()),
-        key=lambda value: order[value[0]]
+        list(values.items()), key=lambda value: order[value[0]]
     )
     return (expression for _, expression in ordered_value_entries)
 
@@ -39,8 +35,9 @@ def prepare_stack(
             sum(
                 (
                     prepare_stack(program, argument_expression)
-                    for argument_expression 
-                    in order_arguments(structure.fields, expression.arguments)
+                    for argument_expression in order_arguments(
+                        structure.fields, expression.arguments
+                    )
                 ),
                 start=tuple(),
             )
@@ -68,8 +65,9 @@ def prepare_stack(
             sum(
                 (
                     prepare_stack(program, argument_expression)
-                    for argument_expression
-                    in order_arguments(function.arguments, expression.arguments)
+                    for argument_expression in order_arguments(
+                        function.arguments, expression.arguments
+                    )
                 ),
                 start=tuple(),
             )
@@ -100,8 +98,10 @@ def compile_function_ast(
 ) -> Subroutine:
     return Subroutine(
         ops=sum(
-            (compile_statement_ast(program, statement)
-                for statement in function.procedure),
+            (
+                compile_statement_ast(program, statement)
+                for statement in function.procedure
+            ),
             start=tuple(),
         ),
         arguments=tuple(argument.name for argument in function.arguments),

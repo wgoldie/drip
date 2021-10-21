@@ -21,7 +21,7 @@ def p_program_empty(p: yacc.YaccProduction) -> None:
 
 
 def p_function_definition(p: yacc.YaccProduction) -> None:
-    """function_definition : FUNCTION SNAKE_NAME LPAREN argument_definitions RPAREN ARROW CAMEL_NAME LPAREN function_body RPAREN"""
+    """function_definition : FUNCTION SNAKE_NAME LPAREN argument_definitions_final RPAREN ARROW CAMEL_NAME LPAREN function_body RPAREN"""
     p[0] = ast.FunctionDefinition(
         name=p[2],
         arguments=p[4],
@@ -60,7 +60,7 @@ def p_expression_variable_reference(p: yacc.YaccProduction) -> None:
 
 
 def p_expression_construction(p: yacc.YaccProduction) -> None:
-    """expression : CAMEL_NAME LPAREN arguments RPAREN"""
+    """expression : CAMEL_NAME LPAREN arguments_final RPAREN"""
     p[0] = ast.ConstructionExpression(
         type_name=p[1],
         arguments={argument.name: argument.expression for argument in p[3]},
@@ -68,7 +68,7 @@ def p_expression_construction(p: yacc.YaccProduction) -> None:
 
 
 def p_function_call_expression(p: yacc.YaccProduction) -> None:
-    """expression : SNAKE_NAME LPAREN arguments RPAREN"""
+    """expression : SNAKE_NAME LPAREN arguments_final RPAREN"""
     p[0] = ast.FunctionCallExpression(
         function_name=p[1],
         arguments={argument.name: argument.expression for argument in p[3]},
@@ -100,27 +100,76 @@ class NamedArgument:
     expression: ast.Expression
 
 
-def p_arguments_argument(p: yacc.YaccProduction) -> None:
-    """arguments : argument arguments"""
-    p[0] = (p[1],) + p[2]
+def p_arguments_final(p: yacc.YaccProduction) -> None:
+    """arguments_final : arguments comma_opt"""
+    p[0] = p[1]
 
 
-def p_arguments_empty(p: yacc.YaccProduction) -> None:
-    """arguments : empty"""
+def p_arguments_final_empty(p: yacc.YaccProduction) -> None:
+    """arguments_final : empty"""
     p[0] = tuple()
 
 
+def p_arguments_multiple(p: yacc.YaccProduction) -> None:
+    """arguments : arguments COMMA argument"""
+    p[0] = p[1] + (p[3],)
+
+
+def p_arguments_single(p: yacc.YaccProduction) -> None:
+    """arguments : argument"""
+    p[0] = (p[1],)
+
+
 def p_argument(p: yacc.YaccProduction) -> None:
-    """argument : SNAKE_NAME EQUALS expression COMMA"""
+    """argument : SNAKE_NAME EQUALS expression"""
     p[0] = NamedArgument(name=p[1], expression=p[3])
 
 
 def p_structure_definition(p: yacc.YaccProduction) -> None:
-    """structure_definition : STRUCTURE CAMEL_NAME LPAREN argument_definitions RPAREN"""
+    """structure_definition : STRUCTURE CAMEL_NAME LPAREN argument_definitions_final RPAREN"""
     p[0] = ast.StructureDefinition(
         name=p[2],
         fields=p[4],
     )
+
+
+def p_argument_definitions_final(
+    p: yacc.YaccProduction,
+) -> None:
+    """argument_definitions_final : argument_definitions comma_opt"""
+    p[0] = p[1]
+
+
+def p_argument_definitions_final_empty(
+    p: yacc.YaccProduction,
+) -> None:
+    """argument_definitions_final : empty"""
+    p[0] = tuple()
+
+
+def p_argument_definitions_multiple(
+    p: yacc.YaccProduction,
+) -> None:
+    """argument_definitions : argument_definitions COMMA argument_definition"""
+    p[0] = p[1] + (p[3],)
+
+
+def p_argument_definitions_single(p: yacc.YaccProduction) -> None:
+    """argument_definitions : argument_definition"""
+    p[0] = (p[1],)
+
+
+def p_argument_definition(p: yacc.YaccProduction) -> None:
+    """argument_definition : SNAKE_NAME COLON CAMEL_NAME"""
+    p[0] = ast.ArgumentDefinition(name=p[1], type_name=p[3])
+
+
+def p_comma_opt(
+    p: yacc.YaccProduction,
+) -> None:
+    """comma_opt : COMMA
+    | empty"""
+    p[0] = None
 
 
 def p_expression_parenthetical(p: yacc.YaccProduction) -> None:
@@ -128,25 +177,13 @@ def p_expression_parenthetical(p: yacc.YaccProduction) -> None:
     p[0] = p[2]
 
 
-def p_argument_definitions_argument_definition(
-    p: yacc.YaccProduction,
-) -> None:
-    """argument_definitions : argument_definition argument_definitions"""
-    p[0] = (p[1],) + p[2]
-
-
-def p_argument_definitions_empty(p: yacc.YaccProduction) -> None:
-    """argument_definitions : empty"""
-    p[0] = tuple()
-
-
-def p_argument_definition(p: yacc.YaccProduction) -> None:
-    """argument_definition : SNAKE_NAME COLON CAMEL_NAME COMMA"""
-    p[0] = ast.ArgumentDefinition(name=p[1], type_name=p[3])
-
-
 def p_error(p: yacc.YaccProduction) -> None:
-    print("error in input", p)
+    print(
+        "error in input",
+        parser.state,
+        [symbol.type for symbol in parser.symstack][1:],
+        p,
+    )
 
 
 class Empty:

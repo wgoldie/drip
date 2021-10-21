@@ -102,6 +102,6 @@ class Program:
     @cached_property
     def function_lookup(self) -> typing.Dict[str, FunctionDefinition]:
         return {
-            function_definition.name: function_definition 
+            function_definition.name: function_definition
             for function_definition in self.function_definitions
         }

@@ -19,7 +19,7 @@ structure Point (
 PROGRAM_B = """
 structure Point (
   x: Float,
-  y: Float,
+  y: Float
 )
 
 structure Line (
@@ -27,7 +27,7 @@ structure Line (
   end: Point,
 )
 
-function manhattan_length (line: Line,) -> Float (
+function manhattan_length (line: Line) -> Float (
   return (line.start.x + line.end.x)+ (line.start.y + line.end.y);
 )
 
