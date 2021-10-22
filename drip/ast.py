@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from functools import cached_property
 import drip.typecheck as drip_typing
 import typing
@@ -8,7 +8,6 @@ import abc
 @dataclass(frozen=True, eq=True)
 class TypeCheckingContext:
     program: 'Program'
-    function_name: str
     function_return_types: typing.Dict[str, drip_typing.ExpressionType] = field(default_factory=dict)
     local_scope: typing.Dict[str, drip_typing.ExpressionType] = field(default_factory=dict)
 
@@ -16,7 +15,7 @@ class Expression(abc.ABC):
     def type_check(self, context: TypeCheckingContext) -> drip_typing.ExpressionType:
         ...
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class LiteralExpression(Expression):
     value: float
 
@@ -24,7 +23,7 @@ class LiteralExpression(Expression):
         return drip_typing.ConcreteType(type=drip_typing.PrimitiveType(primitive=float))
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class VariableReferenceExpression(Expression):
     name: str
 
@@ -32,7 +31,7 @@ class VariableReferenceExpression(Expression):
         return context.local_scope[self.name]
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class ConstructionExpression(Expression):
     type_name: str
     arguments: typing.Dict[str, "Expression"]
@@ -42,7 +41,7 @@ class ConstructionExpression(Expression):
         return drip_typing.ConcreteType(type=drip_typing.StructureType(structure_name=self.type_name))
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class FunctionCallExpression(Expression):
     function_name: str
     arguments: typing.Dict[str, "Expression"]
@@ -62,7 +61,7 @@ def type_name_to_type(context: TypeCheckingContext, type_name: str) -> drip_typi
     else:
         raise ValueError("Unknown type", type_name)
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class PropertyAccessExpression(Expression):
     entity: "Expression"
     property_name: str
@@ -82,7 +81,7 @@ class BinaryOperator(enum.Enum):
     SUBTRACT = enum.auto()
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class BinaryOperatorExpression(Expression):
     operator: BinaryOperator
     lhs: "Expression"
@@ -95,12 +94,12 @@ class BinaryOperatorExpression(Expression):
         return lhs_type
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class ReturnStatement:
     expression: "Expression"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class AssignmentStatement:
     variable_name: str
     expression: Expression
@@ -109,20 +108,50 @@ class AssignmentStatement:
 Statement = typing.Union[AssignmentStatement, ReturnStatement]
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class ArgumentDefinition:
     name: str
     type_name: str
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class FunctionDefinition:
     name: str
     arguments: typing.Tuple[ArgumentDefinition, ...]
     procedure: typing.Tuple[Statement, ...]
 
+    def type_check(self, context: TypeCheckingContext) -> drip_typing.ExpressionType:
+        context = replace(
+            context,
+            local_scope={
+                argument.name: type_name_to_type(context, argument.type_name)
+                for argument in self.arguments})
+        return_set = False
+        return_type = None
+        for statement in self.procedure:
+            if return_set:
+                raise ValueError('Code after return')
 
-@dataclass(frozen=True)
+            if isinstance(statement, ReturnStatement):
+                return_type = statement.expression.type_check(context)
+                return_set = True
+            elif isinstance(statement, AssignmentStatement):
+                statement_expression_type = statement.expression.type_check(context)
+                assert statement.variable_name not in context.local_scope or statement_expression_type == context.local_scope[statement.variable_name]
+                context = replace(
+                    context,
+                    local_scope={
+                        **context.local_scope,
+                        statement.variable_name: statement_expression_type
+                    }
+                )
+            else:
+                raise NotImplementedError(type(statement))
+        assert return_type is not None
+        return return_type
+
+
+@dataclass(frozen=True, eq=True)
 class StructureDefinition:
     name: str
     fields: typing.Tuple[ArgumentDefinition, ...]
@@ -135,7 +164,7 @@ class StructureDefinition:
         }
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class Program:
     structure_definitions: typing.Tuple[StructureDefinition, ...] = tuple()
     function_definitions: typing.Tuple[FunctionDefinition, ...] = tuple()
@@ -153,3 +182,19 @@ class Program:
             function_definition.name: function_definition
             for function_definition in self.function_definitions
         }
+
+    def type_check(self) -> TypeCheckingContext:
+        context = TypeCheckingContext(program=self)
+        for function_definition in self.function_definitions:
+            function_type = function_definition.type_check(context)
+            context = replace(
+                context,
+                function_return_types={
+                    **context.function_return_types,
+                    function_definition.name: function_type
+                },
+            )
+        return context
+
+
+

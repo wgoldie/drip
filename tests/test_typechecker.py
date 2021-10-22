@@ -1,6 +1,7 @@
 import typing
 import drip.ast as ast
 import drip.typecheck as drip_typing
+from tests.test_ast import AST_A
 
 def check_expression_in_program(expression: ast.Expression, structure_definitions: typing.Tuple[ast.StructureDefinition, ...] = tuple()) -> drip_typing.ExpressionType:
     program_ast = ast.Program(
@@ -17,7 +18,7 @@ def check_expression_in_program(expression: ast.Expression, structure_definition
 
             ),
         ))
-    return expression.type_check(ast.TypeCheckingContext(program=program_ast, function_name='main'))
+    return expression.type_check(ast.TypeCheckingContext(program=program_ast))
 
 
 def test_typing_minimal() -> None:
@@ -64,3 +65,7 @@ def test_typing_construction() -> None:
     assert check_expression_in_program(expr_2, structure_definitions=(point_ast,)) ==\
         drip_typing.ConcreteType(type=drip_typing.PrimitiveType(primitive=float),
     )
+
+
+def test_full_program() -> None:
+    AST_A.type_check()

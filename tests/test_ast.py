@@ -3,8 +3,7 @@ import drip.ast as ast
 from drip.interpreter import interpret_subroutine, interpret_program
 from drip.compile_ast import compile_ast
 
-def test_ast() -> None:
-    ast_a = ast.Program(
+AST_A = ast.Program(
         structure_definitions=(
             ast.StructureDefinition(
                 name="Point",
@@ -125,7 +124,9 @@ def test_ast() -> None:
             ),
         ),
     )
-    result = interpret_program(compile_ast(ast_a))
+
+def test_ast() -> None:
+    result = interpret_program(compile_ast(AST_A))
     assert result == TaggedValue(tag=float, value=2)
 
 
