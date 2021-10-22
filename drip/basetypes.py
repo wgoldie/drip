@@ -6,7 +6,7 @@ import drip.ast as ast
 T = typing.TypeVar("T")
 
 
-@dataclass
+@dataclass(frozen=True, eq=True)
 class TaggedValue(typing.Generic[T]):
     tag_names: typing.ClassVar[typing.Dict[str, typing.Type]] = {
         "int": int,
