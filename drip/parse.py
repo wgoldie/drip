@@ -7,22 +7,22 @@ from dataclasses import replace, dataclass
 
 def p_program_structure_definition(p: yacc.YaccProduction) -> None:
     """program : structure_definition program"""
-    p[0] = replace(p[2], structure_definitions=p[2].structure_definitions + (p[1],))
+    p[0] = replace(p[2], structure_definitions=(p[1],) + p[2].structure_definitions)
 
 
 def p_program_function_definition(p: yacc.YaccProduction) -> None:
     """program : function_definition program"""
-    p[0] = replace(p[2], function_definitions=p[2].function_definitions + (p[1],))
+    p[0] = replace(p[2], function_definitions=(p[1],) + p[2].function_definitions)
 
 
 def p_program_empty(p: yacc.YaccProduction) -> None:
     """program : empty"""
-    p[0] = ast.Program()
+    p[0] = ast.ProgramPreliminary()
 
 
 def p_function_definition(p: yacc.YaccProduction) -> None:
     """function_definition : FUNCTION SNAKE_NAME LPAREN argument_definitions_final RPAREN ARROW CAMEL_NAME LPAREN function_body RPAREN"""
-    p[0] = ast.FunctionDefinition(
+    p[0] = ast.FunctionDefinitionPreliminary(
         name=p[2],
         arguments=p[4],
         procedure=p[9],
@@ -51,7 +51,7 @@ def p_statement_assignment(p: yacc.YaccProduction) -> None:
 
 def p_expression_literal_number(p: yacc.YaccProduction) -> None:
     """expression : NUMBER"""
-    p[0] = ast.LiteralExpression(type_name="float", value=p[1])
+    p[0] = ast.LiteralExpression(type_name="Float", value=p[1])
 
 
 def p_expression_variable_reference(p: yacc.YaccProduction) -> None:
@@ -127,10 +127,7 @@ def p_argument(p: yacc.YaccProduction) -> None:
 
 def p_structure_definition(p: yacc.YaccProduction) -> None:
     """structure_definition : STRUCTURE CAMEL_NAME LPAREN argument_definitions_final RPAREN"""
-    p[0] = ast.StructureDefinition(
-        name=p[2],
-        fields=p[4],
-    )
+    p[0] = ast.StructureDefinitionPreliminary(name=p[2], fields=p[4])
 
 
 def p_argument_definitions_final(
@@ -161,7 +158,7 @@ def p_argument_definitions_single(p: yacc.YaccProduction) -> None:
 
 def p_argument_definition(p: yacc.YaccProduction) -> None:
     """argument_definition : SNAKE_NAME COLON CAMEL_NAME"""
-    p[0] = ast.ArgumentDefinition(name=p[1], type_name=p[3])
+    p[0] = ast.ArgumentDefinitionPreliminary(name=p[1], type_name=p[3])
 
 
 def p_comma_opt(

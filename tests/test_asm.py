@@ -3,11 +3,13 @@ from drip.interpreter import interpret_program
 from drip.basetypes import StackValue, TaggedValue
 from drip.program import Subroutine, Program
 
+
 def run_asm_snippet(snippet: str) -> StackValue:
     ops = parse_asm_snippet(snippet)
     subroutine = Subroutine(ops=ops, arguments=tuple())
     program = Program(subroutines={"main": subroutine})
     return interpret_program(program)
+
 
 def test_asm_noop() -> None:
     run_asm_snippet(
@@ -15,6 +17,7 @@ def test_asm_noop() -> None:
     NOOP
     """
     )
+
 
 def test_two_plus_three_a() -> None:
     result = run_asm_snippet(
@@ -26,6 +29,7 @@ def test_two_plus_three_a() -> None:
     """
     )
     assert result == TaggedValue(tag=int, value=5)
+
 
 def test_two_plus_three_b() -> None:
     result = run_asm_snippet(
@@ -39,6 +43,7 @@ def test_two_plus_three_b() -> None:
     """
     )
     assert result == TaggedValue(tag=int, value=5)
+
 
 def test_three_times_four() -> None:
     result = run_asm_snippet(
@@ -62,6 +67,7 @@ def test_three_times_four() -> None:
     )
     assert result == TaggedValue(tag=int, value=12)
 
+
 def test_asm_program_basic() -> None:
     result = interpret_program(
         parse_asm_program(
@@ -76,6 +82,7 @@ def test_asm_program_basic() -> None:
     )
 
     assert result == TaggedValue(tag=int, value=2)
+
 
 def test_asm_program_subroutine() -> None:
     result = interpret_program(
@@ -94,6 +101,7 @@ def test_asm_program_subroutine() -> None:
         )
     )
     assert result == TaggedValue(tag=int, value=4)
+
 
 def test_asm_inc_twice() -> None:
     result = interpret_program(
@@ -116,6 +124,4 @@ def test_asm_inc_twice() -> None:
     """
         )
     )
-    assert result == TaggedValue(tag=int, value = 7)
-
-
+    assert result == TaggedValue(tag=int, value=7)

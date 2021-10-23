@@ -1,3 +1,3 @@
 set -e
-black drip/
-mypy drip/ --config ./mypy.ini
+black drip/ tests/
+mypy  --config ./mypy.ini drip/ tests/

@@ -3,17 +3,22 @@ from drip.parse import parser
 from drip.interpreter import interpret_subroutine, interpret_program
 from drip.compile_ast import compile_ast
 
+
 def test_lex_parse_basic() -> None:
-    ast = parser.parse("""
+    ast = parser.parse(
+        """
         structure Point (
             x: Float,
             y: Float,
         )
-    """)
-    assert ast.structure_lookup['Point'] is not None
+    """
+    ).finalize()
+    assert ast.structure_lookup["Point"] is not None
+
 
 def test_lex_parse_line() -> None:
-    ast = parser.parse("""
+    ast = parser.parse(
+        """
     structure Point (
       x: Float,
       y: Float
@@ -36,7 +41,8 @@ def test_lex_parse_line() -> None:
       return length;
     )
 
-    """)
+    """
+    ).finalize()
 
     result = interpret_program(compile_ast(ast))
     assert result == TaggedValue(tag=float, value=9)
