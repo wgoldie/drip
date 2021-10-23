@@ -5,22 +5,49 @@ import typing
 import enum
 import abc
 
+
 @dataclass(frozen=True, eq=True)
 class TypeCheckingContext:
-    program: 'Program'
-    function_return_types: typing.Dict[str, drip_typing.ExpressionType] = field(default_factory=dict)
-    local_scope: typing.Dict[str, drip_typing.ExpressionType] = field(default_factory=dict)
+    program: "Program"
+    function_return_types: typing.Dict[str, drip_typing.ExpressionType] = field(
+        default_factory=dict
+    )
+    local_scope: typing.Dict[str, drip_typing.ExpressionType] = field(
+        default_factory=dict
+    )
+
+
+def primitive_name_to_type(primitive_name: str) -> drip_typing.ConcreteType:
+    return drip_typing.ConcreteType(
+        type=drip_typing.PrimitiveType(drip_typing.PRIMITIVES[primitive_name])
+    )
+
+
+def type_name_to_type(
+    context: TypeCheckingContext, type_name: str
+) -> drip_typing.ExpressionType:
+    if type_name in drip_typing.PRIMITIVES:
+        return primitive_name_to_type(type_name)
+    elif type_name in context.program.structure_lookup:
+        return drip_typing.ConcreteType(
+            type=drip_typing.StructureType(structure_name=type_name)
+        )
+    else:
+        raise ValueError("Unknown type", type_name)
+
 
 class Expression(abc.ABC):
     def type_check(self, context: TypeCheckingContext) -> drip_typing.ExpressionType:
         ...
 
+
 @dataclass(frozen=True, eq=True)
 class LiteralExpression(Expression):
+    type_name: str
     value: float
 
     def type_check(self, context: TypeCheckingContext) -> drip_typing.ExpressionType:
-        return drip_typing.ConcreteType(type=drip_typing.PrimitiveType(primitive=float))
+        return primitive_name_to_type(self.type_name)
 
 
 @dataclass(frozen=True, eq=True)
@@ -38,7 +65,9 @@ class ConstructionExpression(Expression):
 
     def type_check(self, context: TypeCheckingContext) -> drip_typing.ExpressionType:
         assert self.type_name in context.program.structure_lookup
-        return drip_typing.ConcreteType(type=drip_typing.StructureType(structure_name=self.type_name))
+        return drip_typing.ConcreteType(
+            type=drip_typing.StructureType(structure_name=self.type_name)
+        )
 
 
 @dataclass(frozen=True, eq=True)
@@ -49,17 +78,6 @@ class FunctionCallExpression(Expression):
     def type_check(self, context: TypeCheckingContext) -> drip_typing.ExpressionType:
         return context.function_return_types[self.function_name]
 
-def type_name_to_type(context: TypeCheckingContext, type_name: str) -> drip_typing.ExpressionType:
-    if type_name in drip_typing.PRIMITIVES:
-        return drip_typing.ConcreteType(
-            type=drip_typing.PrimitiveType(
-                drip_typing.PRIMITIVES[type_name]))
-    elif type_name in context.program.structure_lookup:
-        return drip_typing.ConcreteType(
-            type=drip_typing.StructureType(
-                structure_name=type_name))
-    else:
-        raise ValueError("Unknown type", type_name)
 
 @dataclass(frozen=True, eq=True)
 class PropertyAccessExpression(Expression):
@@ -125,25 +143,31 @@ class FunctionDefinition:
             context,
             local_scope={
                 argument.name: type_name_to_type(context, argument.type_name)
-                for argument in self.arguments})
+                for argument in self.arguments
+            },
+        )
         return_set = False
         return_type = None
         for statement in self.procedure:
             if return_set:
-                raise ValueError('Code after return')
+                raise ValueError("Code after return")
 
             if isinstance(statement, ReturnStatement):
                 return_type = statement.expression.type_check(context)
                 return_set = True
             elif isinstance(statement, AssignmentStatement):
                 statement_expression_type = statement.expression.type_check(context)
-                assert statement.variable_name not in context.local_scope or statement_expression_type == context.local_scope[statement.variable_name]
+                assert (
+                    statement.variable_name not in context.local_scope
+                    or statement_expression_type
+                    == context.local_scope[statement.variable_name]
+                )
                 context = replace(
                     context,
                     local_scope={
                         **context.local_scope,
-                        statement.variable_name: statement_expression_type
-                    }
+                        statement.variable_name: statement_expression_type,
+                    },
                 )
             else:
                 raise NotImplementedError(type(statement))
@@ -158,10 +182,7 @@ class StructureDefinition:
 
     @cached_property
     def field_lookup(self) -> typing.Dict[str, ArgumentDefinition]:
-        return {
-            field.name: field
-            for field in self.fields
-        }
+        return {field.name: field for field in self.fields}
 
 
 @dataclass(frozen=True, eq=True)
@@ -191,10 +212,7 @@ class Program:
                 context,
                 function_return_types={
                     **context.function_return_types,
-                    function_definition.name: function_type
+                    function_definition.name: function_type,
                 },
             )
         return context
-
-
-

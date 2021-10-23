@@ -1,5 +1,6 @@
 import typing
 import drip.ast as ast
+import drip.typecheck as drip_typing
 from drip.basetypes import TaggedValue
 from drip.program import Program, Subroutine
 import drip.ops as ops
@@ -47,7 +48,12 @@ def prepare_stack(
         return (ops.PushFromNameOp(name=expression.name),)
     elif isinstance(expression, ast.LiteralExpression):
         return (
-            ops.PushFromLiteralOp(value=TaggedValue(tag=float, value=expression.value)),
+            ops.PushFromLiteralOp(
+                value=TaggedValue(
+                    tag=drip_typing.PRIMITIVES[expression.type_name],
+                    value=expression.value,
+                )
+            ),
         )
     elif isinstance(expression, ast.PropertyAccessExpression):
         return prepare_stack(program, expression.entity) + (

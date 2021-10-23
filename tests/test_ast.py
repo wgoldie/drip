@@ -83,8 +83,8 @@ AST_A = ast.Program(
                         expression=ast.ConstructionExpression(
                             type_name="Point",
                             arguments={
-                                "x": ast.LiteralExpression(value=0.0),
-                                "y": ast.LiteralExpression(value=0.0),
+                                "x": ast.LiteralExpression(type_name='float', value=0.0),
+                                "y": ast.LiteralExpression(type_name='float', value=0.0),
                             },
                         ),
                     ),
@@ -93,8 +93,8 @@ AST_A = ast.Program(
                         expression=ast.ConstructionExpression(
                             type_name="Point",
                             arguments={
-                                "x": ast.LiteralExpression(value=1.0),
-                                "y": ast.LiteralExpression(value=1.0),
+                                "x": ast.LiteralExpression(type_name='float', value=1.0),
+                                "y": ast.LiteralExpression(type_name='float', value=1.0),
                             },
                         ),
                     ),

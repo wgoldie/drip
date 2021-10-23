@@ -49,9 +49,9 @@ def p_statement_assignment(p: yacc.YaccProduction) -> None:
     p[0] = ast.AssignmentStatement(variable_name=p[1], expression=p[3])
 
 
-def p_expression_literal(p: yacc.YaccProduction) -> None:
+def p_expression_literal_number(p: yacc.YaccProduction) -> None:
     """expression : NUMBER"""
-    p[0] = ast.LiteralExpression(value=p[1])
+    p[0] = ast.LiteralExpression(type_name="float", value=p[1])
 
 
 def p_expression_variable_reference(p: yacc.YaccProduction) -> None:

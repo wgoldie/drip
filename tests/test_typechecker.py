@@ -22,7 +22,7 @@ def check_expression_in_program(expression: ast.Expression, structure_definition
 
 
 def test_typing_minimal() -> None:
-    expr = ast.LiteralExpression(1.0)
+    expr = ast.LiteralExpression(type_name='float', value=1.0)
     assert check_expression_in_program(expr) ==\
         drip_typing.ConcreteType(type=drip_typing.PrimitiveType(primitive=float))
 
@@ -30,8 +30,8 @@ def test_typing_minimal() -> None:
 def test_typing_binop() -> None:
     expr = ast.BinaryOperatorExpression(
         operator=ast.BinaryOperator.ADD,
-        lhs=ast.LiteralExpression(1.0),
-        rhs=ast.LiteralExpression(1.0),
+        lhs=ast.LiteralExpression(type_name='float', value=1.0),
+        rhs=ast.LiteralExpression(type_name='float', value=1.0),
     )
     assert check_expression_in_program(expr) ==\
         drip_typing.ConcreteType(type=drip_typing.PrimitiveType(primitive=float))
@@ -49,8 +49,8 @@ def test_typing_construction() -> None:
     expr = ast.ConstructionExpression(
         type_name='Point',
         arguments={
-            'x': ast.LiteralExpression(1.0),
-            'y': ast.LiteralExpression(1.0),
+            'x': ast.LiteralExpression(type_name='float', value=1.0),
+            'y': ast.LiteralExpression(type_name='float', value=1.0),
         }
     )
 

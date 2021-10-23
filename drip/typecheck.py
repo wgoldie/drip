@@ -1,9 +1,11 @@
 import typing
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True, eq=True)
 class StructureType:
     structure_name: str
+
 
 @dataclass(frozen=True, eq=True)
 class PrimitiveType:
@@ -12,9 +14,10 @@ class PrimitiveType:
         typing.Type[float],
     ]
 
+
 PRIMITIVES = {
-    'int': int,
-    'float': float,
+    "int": int,
+    "float": float,
 }
 
 DripType = typing.Union[
@@ -22,9 +25,10 @@ DripType = typing.Union[
     StructureType,
 ]
 
+
 @dataclass(frozen=True, eq=True)
 class ConcreteType:
     type: DripType
 
-ExpressionType = typing.Union[ConcreteType]
 
+ExpressionType = typing.Union[ConcreteType]
