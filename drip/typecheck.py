@@ -32,6 +32,7 @@ class StructureDefinition:
 
         return replace(
             self,
+            type_parameters=tuple(),
             fields=tuple(
                 replace(field, type=parameter_types[field.type.name])
                 if isinstance(field.type, Placeholder)

@@ -255,11 +255,14 @@ class FunctionDefinitionPreliminary:
 
 def finalize_arguments(
     context: TypeCheckingContext,
+    type_parameters: typing.Tuple[str, ...],
     arguments: typing.Tuple[ArgumentDefinitionPreliminary, ...],
 ) -> typing.Tuple[ArgumentDefinition, ...]:
     return tuple(
         ArgumentDefinition(
             name=argument.name, type=type_name_to_type(context, argument.type_name)
+            if argument.type_name not in type_parameters
+            else drip_typing.Placeholder(name=argument.type_name)
         )
         for argument in arguments
     )
@@ -276,8 +279,9 @@ class ProgramPreliminary:
             structure_lookup[definition.name] = drip_typing.StructureDefinition(
                 type_parameters=definition.type_parameters,
                 fields=finalize_arguments(
-                    TypeCheckingContext(structure_lookup=structure_lookup),
-                    definition.fields,
+                    context=TypeCheckingContext(structure_lookup=structure_lookup),
+                    type_parameters=definition.type_parameters,
+                    arguments=definition.fields,
                 ),
             )
         final_context = TypeCheckingContext(structure_lookup=structure_lookup)
@@ -289,7 +293,7 @@ class ProgramPreliminary:
             function_definitions=tuple(
                 FunctionDefinition(
                     name=definition.name,
-                    arguments=finalize_arguments(final_context, definition.arguments),
+                    arguments=finalize_arguments(context=final_context, type_parameters=tuple(), arguments=definition.arguments),
                     procedure=definition.procedure,
                 )
                 for definition in self.function_definitions

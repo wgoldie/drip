@@ -113,11 +113,11 @@ def test_typing_param() -> None:
         },
     )
 
+    assert check_expression_in_program(expr, structure_definitions=(param_point_ast,)) == drip_typing.ConcreteType(type=drip_typing.StructureType(structure=concrete_point_ast))
+
     expr_2 = ast.PropertyAccessExpression(entity=expr, property_name="x")
 
-    check_expression_in_program(expr_2, structure_definitions=(param_point_ast,))
-
-    # drip_typing.ConcreteType(type=drip_typing.StructureType(structure=concrete_point_ast))
+    assert check_expression_in_program(expr_2, structure_definitions=(param_point_ast,)) == FLOAT
 
 
 def test_full_program() -> None:
