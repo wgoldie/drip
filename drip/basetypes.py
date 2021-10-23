@@ -25,9 +25,6 @@ class TaggedValue(typing.Generic[T]):
         return cls(tag=tag, value=tag(value_literal))
 
 
-
-
-
 @validated_dataclass
 class StructureInstance:
     structure: ast.StructureDefinition
@@ -53,6 +50,7 @@ class FrameState:
     flags: typing.Dict[Name, int] = field(default_factory=dict)
     program_counter: int = 0
     structures: typing.Dict[str, ast.StructureDefinition] = field(default_factory=dict)
+
 
 @validated_dataclass
 class ByteCodeLine:

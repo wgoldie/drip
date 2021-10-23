@@ -6,7 +6,6 @@ from drip.validated_dataclass import validated_dataclass
 import abc
 
 
-
 @validated_dataclass
 class Placeholder:
     name: str

@@ -16,13 +16,19 @@ PRIMITIVES = (str, int, float, bool)
 class ValidationConfig:
     comprehensive: bool
 
+
 class ValidationNotImplementedError(NotImplementedError):
     pass
 
-def validate_tuple(expected_type: typing.Type, value: typing.Any, config: ValidationConfig) -> None:
+
+def validate_tuple(
+    expected_type: typing.Type, value: typing.Any, config: ValidationConfig
+) -> None:
     args = typing.get_args(expected_type)
     if not isinstance(value, tuple):
-        raise TypeError(f'Expected {expected_type} but {value} is of non-tuple type {type(value)}')
+        raise TypeError(
+            f"Expected {expected_type} but {value} is of non-tuple type {type(value)}"
+        )
     if Ellipsis in args:
         assert len(args) == 2
         subtype = args[0]
@@ -30,24 +36,37 @@ def validate_tuple(expected_type: typing.Type, value: typing.Any, config: Valida
             validate(subtype, subvalue, config)
     else:
         if not len(args) == len(value):
-            raise TypeError(f'Expected {expected_type} but {value} is of length {len(value)}')
+            raise TypeError(
+                f"Expected {expected_type} but {value} is of length {len(value)}"
+            )
         for subtype, subvalue in zip(args, value):
             validate(subtype, subvalue, config)
 
-def validate_dataclass(expected_type: typing.Type, value: typing.Any, config: ValidationConfig) -> None:
+
+def validate_dataclass(
+    expected_type: typing.Type, value: typing.Any, config: ValidationConfig
+) -> None:
     if not isinstance(value, expected_type):
         raise TypeError(expected_type, value)
 
-def validate_dict(expected_type: typing.Type, value: typing.Any, config: ValidationConfig) -> None:
+
+def validate_dict(
+    expected_type: typing.Type, value: typing.Any, config: ValidationConfig
+) -> None:
     if not isinstance(value, dict):
-        raise TypeError(f'Expected {expected_type} but {value} is of non-dict type {type(value)}')
+        raise TypeError(
+            f"Expected {expected_type} but {value} is of non-dict type {type(value)}"
+        )
     args = typing.get_args(expected_type)
     key_type, value_type = args
     for key, subvalue in value.items():
         validate(key_type, key, config)
         validate(value_type, subvalue, config)
 
-def validate_union(expected_type: typing.Type, value: typing.Any, config: ValidationConfig) -> None:
+
+def validate_union(
+    expected_type: typing.Type, value: typing.Any, config: ValidationConfig
+) -> None:
     args = typing.get_args(expected_type)
     for subtype in args:
         exceptions: typing.List[typing.Tuple[Exception, str]] = []
@@ -58,14 +77,21 @@ def validate_union(expected_type: typing.Type, value: typing.Any, config: Valida
             if isinstance(e, ValidationNotImplementedError):
                 raise e
             exceptions.append((e, traceback.format_exc()))
-    raise TypeError(f"{value} could not be parsed as any element of union {expected_type}", exceptions)
+    raise TypeError(
+        f"{value} could not be parsed as any element of union {expected_type}",
+        exceptions,
+    )
 
 
-def validate(expected_type: typing.Type, value: typing.Any, config: ValidationConfig) -> None:
+def validate(
+    expected_type: typing.Type, value: typing.Any, config: ValidationConfig
+) -> None:
 
     if expected_type in PRIMITIVES:
         if not isinstance(value, expected_type):
-            raise TypeError(f'Expected {expected_type} but got {value} of type {type(value)}')
+            raise TypeError(
+                f"Expected {expected_type} but got {value} of type {type(value)}"
+            )
         return
 
     if expected_type is type(None):
@@ -109,18 +135,25 @@ def validate(expected_type: typing.Type, value: typing.Any, config: ValidationCo
     if type(expected_type) is typing.TypeVar:
         return
 
-    if inspect.isclass(expected_type) and (issubclass(expected_type, abc.ABC) or issubclass(expected_type, Enum)):
+    if inspect.isclass(expected_type) and (
+        issubclass(expected_type, abc.ABC) or issubclass(expected_type, Enum)
+    ):
         assert isinstance(value, expected_type)
         return
-    
+
     if config.comprehensive:
-        raise ValidationNotImplementedError(f"Expected type {expected_type} (type={type(expected_type)}, origin={origin}, value={value})")
+        raise ValidationNotImplementedError(
+            f"Expected type {expected_type} (type={type(expected_type)}, origin={origin}, value={value})"
+        )
+
 
 @dataclass
 class GlobalValidationConfig:
     validation_enabled: bool
 
+
 VALIDATION_SETTINGS = GlobalValidationConfig(validation_enabled=False)
+
 
 def validated_dataclass(cls: typing.Type[C]) -> typing.Type[C]:
     cls = dataclass(frozen=True, kw_only=True)(cls)  # type: ignore
@@ -142,7 +175,9 @@ def validated_dataclass(cls: typing.Type[C]) -> typing.Type[C]:
             else:
                 raise TypeError(f"No argument provided for {field.name}")
             if do_validation:
-                validate(hints[field.name], field_value, ValidationConfig(comprehensive=True))
+                validate(
+                    hints[field.name], field_value, ValidationConfig(comprehensive=True)
+                )
             object.__setattr__(self, field.name, field_value)
 
     cls.__init__ = __init__  # type: ignore
