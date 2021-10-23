@@ -49,6 +49,7 @@ def type_name_to_type(
 
 
 class Expression(abc.ABC):
+    @abc.abstractmethod
     def type_check(self, context: TypeCheckingContext) -> drip_typing.ExpressionType:
         ...
 
@@ -73,7 +74,7 @@ class VariableReferenceExpression(Expression):
 @validated_dataclass
 class ConstructionExpression(Expression):
     type_name: str
-    arguments: typing.Dict[str, "Expression"]
+    arguments: typing.Dict[str, Expression]
     type_arguments: typing.Dict[str, str] = field(default_factory=dict)
 
     def type_check(self, context: TypeCheckingContext) -> drip_typing.ExpressionType:
@@ -98,7 +99,7 @@ class ConstructionExpression(Expression):
 @validated_dataclass
 class FunctionCallExpression(Expression):
     function_name: str
-    arguments: typing.Dict[str, "Expression"]
+    arguments: typing.Dict[str, Expression]
 
     def type_check(self, context: TypeCheckingContext) -> drip_typing.ExpressionType:
         return context.function_return_types[self.function_name]
@@ -106,7 +107,7 @@ class FunctionCallExpression(Expression):
 
 @validated_dataclass
 class PropertyAccessExpression(Expression):
-    entity: "Expression"
+    entity: Expression
     property_name: str
 
     def type_check(self, context: TypeCheckingContext) -> drip_typing.ExpressionType:
@@ -126,8 +127,8 @@ class BinaryOperator(enum.Enum):
 @validated_dataclass
 class BinaryOperatorExpression(Expression):
     operator: BinaryOperator
-    lhs: "Expression"
-    rhs: "Expression"
+    lhs: Expression
+    rhs: Expression
 
     def type_check(self, context: TypeCheckingContext) -> drip_typing.ExpressionType:
         lhs_type = self.lhs.type_check(context)
@@ -138,7 +139,7 @@ class BinaryOperatorExpression(Expression):
 
 @validated_dataclass
 class ReturnStatement:
-    expression: "Expression"
+    expression: Expression
 
 
 @validated_dataclass

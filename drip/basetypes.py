@@ -1,9 +1,10 @@
+from __future__ import annotations
 import typing
 from dataclasses import field, dataclass
 from drip.validated_dataclass import validated_dataclass
 import drip.ast as ast
 
-T = typing.TypeVar("T")
+T = typing.TypeVar("T", int, float, covariant=True)
 
 
 @validated_dataclass
@@ -24,7 +25,20 @@ class TaggedValue(typing.Generic[T]):
         return cls(tag=tag, value=tag(value_literal))
 
 
-StackValue = typing.Union[TaggedValue[float], "StructureInstance"]
+
+
+
+@validated_dataclass
+class StructureInstance:
+    structure: ast.StructureDefinition
+    field_values: typing.Dict[str, StackValue]
+
+
+StackValue = typing.Union[
+    TaggedValue[typing.Union[int]],
+    TaggedValue[typing.Union[float]],
+    StructureInstance,
+]
 Stack = typing.Tuple[StackValue, ...]
 OpArg = typing.Union[StackValue]
 Name = str
@@ -39,13 +53,6 @@ class FrameState:
     flags: typing.Dict[Name, int] = field(default_factory=dict)
     program_counter: int = 0
     structures: typing.Dict[str, ast.StructureDefinition] = field(default_factory=dict)
-
-
-@validated_dataclass
-class StructureInstance:
-    structure: ast.StructureDefinition
-    field_values: typing.Dict[str, StackValue]
-
 
 @validated_dataclass
 class ByteCodeLine:

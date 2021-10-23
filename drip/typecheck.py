@@ -1,8 +1,10 @@
+from __future__ import annotations
 import typing
 from functools import cached_property
 from dataclasses import replace
 from drip.validated_dataclass import validated_dataclass
 import abc
+
 
 
 @validated_dataclass
@@ -13,7 +15,7 @@ class Placeholder:
 @validated_dataclass
 class ArgumentDefinition:
     name: str
-    type: "ExpressionType"
+    type: ExpressionType
 
 
 @validated_dataclass
@@ -26,7 +28,7 @@ class StructureDefinition:
         return {field.name: field for field in self.fields}
 
     def resolve_type(
-        self, parameter_types: typing.Dict[str, "ExpressionType"]
+        self, parameter_types: typing.Dict[str, ExpressionType]
     ) -> "StructureDefinition":
         if len(self.type_parameters) == 0:
             return self
@@ -81,7 +83,7 @@ class TypeParameter:
 @validated_dataclass
 class ParameterizedType(abc.ABC):
     def yield_type(
-        self, parameter_types: typing.Dict[str, "ExpressionType"]
+        self, parameter_types: typing.Dict[str, ExpressionType]
     ) -> DripType:
         ...
 """
