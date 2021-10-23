@@ -3,7 +3,7 @@
 # apis at all layers (bytecode, ast, different syntaxes)
 # supports easy (de)serialization of datastructures
 from collections import defaultdict
-from dataclasses import dataclass, replace, field
+from dataclasses import replace, field
 import typing
 import drip.ops as ops
 from drip.util import pop_n
@@ -12,14 +12,13 @@ from drip.basetypes import (
     StackValue,
     Stack,
     TaggedValue,
-    FrameState,
     ByteCodeLine,
 )
 from drip.program import Program, Subroutine
 
 
 def interpret_subroutine(
-    program: Program, subroutine: Subroutine, init_state: FrameState
+    program: Program, subroutine: Subroutine, init_state: ops.FrameState
 ) -> StackValue:
     frame_history = [init_state]
     next_state = init_state
@@ -36,7 +35,7 @@ def interpret_subroutine(
                 argument_name: value
                 for argument_name, value in zip(subsubroutine.arguments, popped.values)
             }
-            substate = FrameState(names=names, structures=program.structures)
+            substate = ops.FrameState(names=names, structures=program.structures)
             result = interpret_subroutine(
                 program=program, subroutine=subsubroutine, init_state=substate
             )
@@ -61,5 +60,5 @@ def interpret_program(program: Program) -> StackValue:
     return interpret_subroutine(
         program,
         program.subroutines["main"],
-        init_state=FrameState(structures=program.structures),
+        init_state=ops.FrameState(structures=program.structures),
     )

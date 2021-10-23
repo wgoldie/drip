@@ -2,7 +2,8 @@ import typing
 import lib.ply.yacc as yacc
 from drip.lex import tokens
 import drip.ast as ast
-from dataclasses import replace, dataclass
+from dataclasses import replace
+from drip.validated_dataclass import validated_dataclass
 
 
 def p_program_structure_definition(p: yacc.YaccProduction) -> None:
@@ -95,12 +96,12 @@ def p_binary_operator_expression(p: yacc.YaccProduction) -> None:
     )
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class NamedArgument:
     name: str
     expression: ast.Expression
 
-@dataclass(frozen=True)
+@validated_dataclass
 class NamedTypeParameter:
     name: str
     type_name: str 

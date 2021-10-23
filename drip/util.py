@@ -1,9 +1,9 @@
 import typing
-from dataclasses import dataclass
 from drip.basetypes import Stack, StackValue
+from drip.validated_dataclass import validated_dataclass
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class PopN:
     stack: Stack
     values: Stack
@@ -15,7 +15,7 @@ def pop_n(stack: typing.Tuple[StackValue, ...], n: int) -> PopN:
     return PopN(stack=stack[:-n], values=stack[-n:])
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class Pop:
     stack: Stack
     value: StackValue

@@ -1,16 +1,20 @@
 import abc
-from dataclasses import dataclass, field, replace
+from dataclasses import field, replace
 from enum import Enum, auto
 import typing
+import drip.ast as ast
 from drip.basetypes import (
     Name,
+    Stack,
     StackValue,
-    FrameState,
     TaggedValue,
     ByteCodeLine,
+    FrameState,
     StructureInstance,
 )
+from drip.validated_dataclass import validated_dataclass
 from drip.util import pop, pop_n
+
 
 
 def no_default() -> None:
@@ -29,7 +33,7 @@ class ByteCodeOp(abc.ABC):
         ...
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class StartSubroutineOp(ByteCodeOp):
     op_code: typing.ClassVar[str] = "START_SUBROUTINE"
     name: Name
@@ -42,7 +46,7 @@ class StartSubroutineOp(ByteCodeOp):
         return cls(name=line.arguments[0], arguments=line.arguments[1:])
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class EndSubroutineOp(ByteCodeOp):
     op_code: typing.ClassVar[str] = "END_SUBROUTINE"
     name: Name
@@ -54,7 +58,7 @@ class EndSubroutineOp(ByteCodeOp):
         return cls(name=line.arguments[0])
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class CallSubroutineOp(ByteCodeOp):
     op_code: typing.ClassVar[str] = "CALL_SUBROUTINE"
     name: Name
@@ -72,7 +76,7 @@ class SubroutineOp(ByteCodeOp, abc.ABC):
         ...
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class ReturnOp(SubroutineOp):
     op_code: typing.ClassVar[str] = "RETURN"
 
@@ -90,7 +94,7 @@ class ReturnOp(SubroutineOp):
         )
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class NoopOp(SubroutineOp):
     op_code: typing.ClassVar[str] = "NOOP"
 
@@ -104,7 +108,7 @@ class NoopOp(SubroutineOp):
         return state
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class PushFromNameOp(SubroutineOp):
     op_code: typing.ClassVar[str] = "PUSH_FROM_NAME"
     name: Name
@@ -119,7 +123,7 @@ class PushFromNameOp(SubroutineOp):
         return replace(state, stack=state.stack + (state.names[self.name],))
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class PopToNameOp(SubroutineOp):
     op_code: typing.ClassVar[str] = "POP_TO_NAME"
     name: Name
@@ -137,7 +141,7 @@ class PopToNameOp(SubroutineOp):
         )
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class PushFromLiteralOp(SubroutineOp):
     op_code: typing.ClassVar[str] = "PUSH_FROM_LITERAL"
     value: StackValue
@@ -156,7 +160,7 @@ class PushFromLiteralOp(SubroutineOp):
         return replace(state, stack=state.stack + (self.value,))
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class StoreFromLiteralOp(SubroutineOp):
     op_code: typing.ClassVar[str] = "STORE_FROM_LITERAL"
     name: Name
@@ -177,7 +181,7 @@ class StoreFromLiteralOp(SubroutineOp):
         return replace(state, names={**state.names, self.name: self.value})
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class BinaryAddOp(SubroutineOp):
     op_code: typing.ClassVar[str] = "BINARY_ADD"
 
@@ -206,7 +210,7 @@ class BinaryAddOp(SubroutineOp):
         )
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class BinarySubtractOp(SubroutineOp):
     op_code: typing.ClassVar[str] = "BINARY_SUBTRACT"
 
@@ -234,7 +238,7 @@ class BinarySubtractOp(SubroutineOp):
         )
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class PrintNameOp(SubroutineOp):
     op_code: typing.ClassVar[str] = "PRINT_NAME"
     name: Name
@@ -250,7 +254,7 @@ class PrintNameOp(SubroutineOp):
         return state
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class ConstructStructureOp(SubroutineOp):
     op_code: typing.ClassVar[str] = "CONSTRUCT_STRUCTURE"
     structure: Name
@@ -278,7 +282,7 @@ class ConstructStructureOp(SubroutineOp):
         )
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class PopAndPushPropertyOp(SubroutineOp):
     op_code: typing.ClassVar[str] = "POP_AND_PUSH_PROPERTY"
     property: Name
@@ -299,7 +303,7 @@ class PopAndPushPropertyOp(SubroutineOp):
         )
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class SetFlagOp(SubroutineOp):
     op_code: typing.ClassVar[str] = "SET_FLAG"
     flag: Name
@@ -315,7 +319,7 @@ class SetFlagOp(SubroutineOp):
         return replace(state, flags={**state.flags, self.flag: state.program_counter})
 
 
-@dataclass(frozen=True)
+@validated_dataclass
 class BranchToFlagOp(SubroutineOp):
     op_code: typing.ClassVar[str] = "BRANCH_TO_FLAG"
     flag: Name

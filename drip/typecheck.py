@@ -1,21 +1,22 @@
 import typing
 from functools import cached_property
-from dataclasses import dataclass, replace
+from dataclasses import replace
+from drip.validated_dataclass import validated_dataclass
 import abc
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class Placeholder:
     name: str
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class ArgumentDefinition:
     name: str
     type: "ExpressionType"
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class StructureDefinition:
     fields: typing.Tuple[ArgumentDefinition, ...]
     type_parameters: typing.Tuple[str, ...] = tuple()
@@ -42,12 +43,12 @@ class StructureDefinition:
         )
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class StructureType:
     structure: StructureDefinition
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class PrimitiveType:
     primitive: typing.Union[
         typing.Type[int],
@@ -66,18 +67,18 @@ DripType = typing.Union[
 ]
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class ConcreteType:
     type: DripType
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class TypeParameter:
     name: str
 
 
 """
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class ParameterizedType(abc.ABC):
     def yield_type(
         self, parameter_types: typing.Dict[str, "ExpressionType"]

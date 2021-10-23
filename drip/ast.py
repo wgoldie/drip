@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field, replace
+from drip.validated_dataclass import validated_dataclass
 from functools import cached_property
 import drip.typecheck as drip_typing
 from drip.typecheck import StructureDefinition, ArgumentDefinition
@@ -7,13 +8,13 @@ import enum
 import abc
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class NamedStructureDefinition:
     structure: drip_typing.StructureDefinition
     name: str
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class TypeCheckingContext:
     structure_lookup: typing.Dict[str, StructureDefinition] = field(
         default_factory=dict
@@ -52,7 +53,7 @@ class Expression(abc.ABC):
         ...
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class LiteralExpression(Expression):
     type_name: str
     value: float
@@ -61,7 +62,7 @@ class LiteralExpression(Expression):
         return primitive_name_to_type(self.type_name)
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class VariableReferenceExpression(Expression):
     name: str
 
@@ -69,7 +70,7 @@ class VariableReferenceExpression(Expression):
         return context.local_scope[self.name]
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class ConstructionExpression(Expression):
     type_name: str
     arguments: typing.Dict[str, "Expression"]
@@ -94,7 +95,7 @@ class ConstructionExpression(Expression):
             )
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class FunctionCallExpression(Expression):
     function_name: str
     arguments: typing.Dict[str, "Expression"]
@@ -103,7 +104,7 @@ class FunctionCallExpression(Expression):
         return context.function_return_types[self.function_name]
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class PropertyAccessExpression(Expression):
     entity: "Expression"
     property_name: str
@@ -122,7 +123,7 @@ class BinaryOperator(enum.Enum):
     SUBTRACT = enum.auto()
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class BinaryOperatorExpression(Expression):
     operator: BinaryOperator
     lhs: "Expression"
@@ -135,12 +136,12 @@ class BinaryOperatorExpression(Expression):
         return lhs_type
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class ReturnStatement:
     expression: "Expression"
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class AssignmentStatement:
     variable_name: str
     expression: Expression
@@ -149,7 +150,7 @@ class AssignmentStatement:
 Statement = typing.Union[AssignmentStatement, ReturnStatement]
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class FunctionDefinition:
     name: str
     arguments: typing.Tuple[drip_typing.ArgumentDefinition, ...]
@@ -189,7 +190,7 @@ class FunctionDefinition:
         return return_type
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class Program:
     structure_definitions: typing.Tuple[NamedStructureDefinition, ...] = tuple()
     function_definitions: typing.Tuple[FunctionDefinition, ...] = tuple()
@@ -222,7 +223,7 @@ class Program:
         return context
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class FinalizationContext:
     type_parameters: typing.Tuple[str]
 
@@ -233,20 +234,20 @@ def resolve_preliminary_type_name(
     pass
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class ArgumentDefinitionPreliminary:
     name: str
     type_name: str
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class StructureDefinitionPreliminary:
     name: str
     fields: typing.Tuple[ArgumentDefinitionPreliminary, ...] = tuple()
     type_parameters: typing.Tuple[str, ...] = tuple()
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class FunctionDefinitionPreliminary:
     name: str
     arguments: typing.Tuple[ArgumentDefinitionPreliminary, ...] = tuple()
@@ -268,7 +269,7 @@ def finalize_arguments(
     )
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class ProgramPreliminary:
     structure_definitions: typing.Tuple[StructureDefinitionPreliminary, ...] = tuple()
     function_definitions: typing.Tuple[FunctionDefinitionPreliminary, ...] = tuple()

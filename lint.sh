@@ -1,2 +1,2 @@
 set -e
-mypy  --config ./mypy.ini drip/ tests/
+MYPYPATH=$(dirname "$0") mypy --config ./mypy.ini drip/ tests/

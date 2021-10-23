@@ -1,12 +1,12 @@
 import typing
-from dataclasses import dataclass, field
+from dataclasses import field, dataclass
+from drip.validated_dataclass import validated_dataclass
 import drip.ast as ast
-
 
 T = typing.TypeVar("T")
 
 
-@dataclass(frozen=True, eq=True)
+@validated_dataclass
 class TaggedValue(typing.Generic[T]):
     tag_names: typing.ClassVar[typing.Dict[str, typing.Type]] = {
         "int": int,
@@ -29,25 +29,7 @@ Stack = typing.Tuple[StackValue, ...]
 OpArg = typing.Union[StackValue]
 Name = str
 
-
-@dataclass
-class StructureInstance:
-    structure: ast.StructureDefinition
-    field_values: typing.Dict[str, StackValue]
-
-
-@dataclass(frozen=True)
-class ByteCodeLine:
-    op_code: str
-    arguments: typing.Tuple[str, ...]
-
-    @classmethod
-    def lex_asm(cls: typing.Type["ByteCodeLine"], line: str) -> "ByteCodeLine":
-        parts = line.split(" ")
-        return cls(op_code=parts[0], arguments=tuple(parts[1:]))
-
-
-@dataclass(frozen=True)
+@validated_dataclass
 class FrameState:
     stack: Stack = field(default_factory=tuple)
     names: typing.Dict[Name, StackValue] = field(default_factory=dict)
@@ -56,3 +38,19 @@ class FrameState:
     flags: typing.Dict[Name, int] = field(default_factory=dict)
     program_counter: int = 0
     structures: typing.Dict[str, ast.StructureDefinition] = field(default_factory=dict)
+
+
+@validated_dataclass
+class StructureInstance:
+    structure: ast.StructureDefinition
+    field_values: typing.Dict[str, StackValue]
+
+@validated_dataclass
+class ByteCodeLine:
+    op_code: str
+    arguments: typing.Tuple[str, ...]
+
+    @classmethod
+    def lex_asm(cls: typing.Type["ByteCodeLine"], line: str) -> "ByteCodeLine":
+        parts = line.split(" ")
+        return cls(op_code=parts[0], arguments=tuple(parts[1:]))
