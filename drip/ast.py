@@ -73,7 +73,7 @@ class VariableReferenceExpression(Expression):
 class ConstructionExpression(Expression):
     type_name: str
     arguments: typing.Dict[str, "Expression"]
-    type_arguments: typing.Dict[str, str] = field(default_factory=dict)
+    type_arguments: typing.Dict[str, str] = field(default_factory=dict) 
 
     def type_check(self, context: TypeCheckingContext) -> drip_typing.ExpressionType:
         structure = context.structure_lookup[self.type_name]
@@ -242,15 +242,15 @@ class ArgumentDefinitionPreliminary:
 @dataclass(frozen=True, eq=True)
 class StructureDefinitionPreliminary:
     name: str
-    fields: typing.Tuple[ArgumentDefinitionPreliminary, ...]
+    fields: typing.Tuple[ArgumentDefinitionPreliminary, ...] = tuple()
     type_parameters: typing.Tuple[str, ...] = tuple()
 
 
 @dataclass(frozen=True, eq=True)
 class FunctionDefinitionPreliminary:
     name: str
-    arguments: typing.Tuple[ArgumentDefinitionPreliminary, ...]
-    procedure: typing.Tuple[Statement, ...]
+    arguments: typing.Tuple[ArgumentDefinitionPreliminary, ...] = tuple()
+    procedure: typing.Tuple[Statement, ...] = tuple()
 
 
 def finalize_arguments(

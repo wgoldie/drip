@@ -4,6 +4,8 @@ tokens = (
     "NUMBER",
     "LPAREN",
     "RPAREN",
+    "LSQUARE",
+    "RSQUARE",
     "RETURN",
     "COLON",
     "ARROW",
@@ -36,6 +38,8 @@ def t_RETURN(t: lex.LexToken) -> lex.LexToken:
 
 t_LPAREN = r"\("
 t_RPAREN = r"\)"
+t_LSQUARE = r"\["
+t_RSQUARE = r"\]"
 t_COLON = r":"
 t_ARROW = r"->"
 t_PERIOD = r"\."

@@ -60,10 +60,11 @@ def p_expression_variable_reference(p: yacc.YaccProduction) -> None:
 
 
 def p_expression_construction(p: yacc.YaccProduction) -> None:
-    """expression : CAMEL_NAME LPAREN arguments_final RPAREN"""
+    """expression : CAMEL_NAME type_parameters_final_opt LPAREN arguments_final RPAREN"""
     p[0] = ast.ConstructionExpression(
         type_name=p[1],
-        arguments={argument.name: argument.expression for argument in p[3]},
+        arguments={argument.name: argument.expression for argument in p[4]},
+        type_arguments={parameter.name: parameter.type_name for parameter in p[2]}
     )
 
 
@@ -99,6 +100,10 @@ class NamedArgument:
     name: str
     expression: ast.Expression
 
+@dataclass(frozen=True)
+class NamedTypeParameter:
+    name: str
+    type_name: str 
 
 def p_arguments_final(p: yacc.YaccProduction) -> None:
     """arguments_final : arguments comma_opt"""
@@ -126,8 +131,81 @@ def p_argument(p: yacc.YaccProduction) -> None:
 
 
 def p_structure_definition(p: yacc.YaccProduction) -> None:
-    """structure_definition : STRUCTURE CAMEL_NAME LPAREN argument_definitions_final RPAREN"""
-    p[0] = ast.StructureDefinitionPreliminary(name=p[2], fields=p[4])
+    """structure_definition : STRUCTURE CAMEL_NAME type_parameter_definitions_final_opt LPAREN argument_definitions_final RPAREN"""
+    p[0] = ast.StructureDefinitionPreliminary(
+        name=p[2],
+        type_parameters=p[3],
+        fields=p[5])
+
+
+def p_type_parameters_final_opt(
+    p: yacc.YaccProduction,
+) -> None:
+    """type_parameters_final_opt : type_parameters_final
+                                | empty"""
+    p[0] = p[1] if p[1] is not None else tuple()
+
+def p_type_parameters_final(
+    p: yacc.YaccProduction,
+) -> None:
+    """type_parameters_final : LSQUARE type_parameters comma_opt RSQUARE"""
+    p[0] = p[2]
+
+
+def p_type_parameters_final_empty(
+    p: yacc.YaccProduction,
+) -> None:
+    """type_parameters_final : empty"""
+    p[0] = tuple()
+
+
+def p_type_parameters_multiple(
+    p: yacc.YaccProduction,
+) -> None:
+    """type_parameters : type_parameters COMMA type_parameter"""
+    p[0] = p[1] + (p[3],)
+
+def p_type_parameters_single(p: yacc.YaccProduction) -> None:
+    """type_parameters : type_parameter"""
+    p[0] = (p[1],) 
+
+
+def p_type_parameter(p: yacc.YaccProduction) -> None:
+    """type_parameter : CAMEL_NAME EQUALS CAMEL_NAME"""
+    p[0] = NamedTypeParameter(name=p[1], type_name=p[3])
+
+
+def p_type_parameter_definitions_final_opt(
+    p: yacc.YaccProduction,
+) -> None:
+    """type_parameter_definitions_final_opt : type_parameter_definitions_final
+                                | empty"""
+    p[0] = p[1] if p[1] is not None else tuple()
+
+def p_type_parameter_definitions_final(
+    p: yacc.YaccProduction,
+) -> None:
+    """type_parameter_definitions_final : LSQUARE type_parameter_definitions comma_opt RSQUARE"""
+    p[0] = p[2]
+
+
+def p_type_parameter_definitions_final_empty(
+    p: yacc.YaccProduction,
+) -> None:
+    """type_parameter_definitions_final : empty"""
+    p[0] = tuple()
+
+
+def p_type_parameter_definitions_multiple(
+    p: yacc.YaccProduction,
+) -> None:
+    """type_parameter_definitions : type_parameter_definitions COMMA CAMEL_NAME"""
+    p[0] = p[1] + (p[3],)
+
+
+def p_type_parameter_definitions_single(p: yacc.YaccProduction) -> None:
+    """type_parameter_definitions : CAMEL_NAME """
+    p[0] = (p[1],)
 
 
 def p_argument_definitions_final(

@@ -1,4 +1,5 @@
 import typing
+from drip.parse import parser
 import drip.ast as ast
 import drip.typecheck as drip_typing
 from tests.test_ast import AST_A
@@ -106,7 +107,7 @@ def test_typing_param() -> None:
 
     expr = ast.ConstructionExpression(
         type_name="Point",
-        type_arguments={"T": "Float"},
+        type_arguments={'T': 'Float',},
         arguments={
             "x": ast.LiteralExpression(type_name="Float", value=1.0),
             "y": ast.LiteralExpression(type_name="Float", value=1.0),
@@ -118,6 +119,23 @@ def test_typing_param() -> None:
     expr_2 = ast.PropertyAccessExpression(entity=expr, property_name="x")
 
     assert check_expression_in_program(expr_2, structure_definitions=(param_point_ast,)) == FLOAT
+
+
+def test_typing_param_parse() -> None:
+    ast_a = parser.parse("""
+    structure Point [T, U] (
+      x: T,
+      y: U 
+    )
+
+    function main () -> Int (
+      origin = Point [T = Float, U = Float] (x=0.,y=0.,);
+      return origin.x;
+    )
+
+    """).finalize()
+    context = ast.TypeCheckingContext(structure_lookup=ast_a.structure_lookup)
+    assert ast_a.function_definitions[0].type_check(context) == FLOAT
 
 
 def test_full_program() -> None:
