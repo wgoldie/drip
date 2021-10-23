@@ -29,6 +29,7 @@ Stack = typing.Tuple[StackValue, ...]
 OpArg = typing.Union[StackValue]
 Name = str
 
+
 @validated_dataclass
 class FrameState:
     stack: Stack = field(default_factory=tuple)
@@ -44,6 +45,7 @@ class FrameState:
 class StructureInstance:
     structure: ast.StructureDefinition
     field_values: typing.Dict[str, StackValue]
+
 
 @validated_dataclass
 class ByteCodeLine:

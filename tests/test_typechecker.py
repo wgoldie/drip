@@ -18,7 +18,7 @@ def check_expression_in_program(
     ] = tuple(),
 ) -> drip_typing.ExpressionType:
     program_ast = ast.ProgramPreliminary(
-        structure_definitions,
+        structure_definitions=structure_definitions,
         function_definitions=(
             ast.FunctionDefinitionPreliminary(
                 name="main",
@@ -107,22 +107,32 @@ def test_typing_param() -> None:
 
     expr = ast.ConstructionExpression(
         type_name="Point",
-        type_arguments={'T': 'Float',},
+        type_arguments={
+            "T": "Float",
+        },
         arguments={
             "x": ast.LiteralExpression(type_name="Float", value=1.0),
             "y": ast.LiteralExpression(type_name="Float", value=1.0),
         },
     )
 
-    assert check_expression_in_program(expr, structure_definitions=(param_point_ast,)) == drip_typing.ConcreteType(type=drip_typing.StructureType(structure=concrete_point_ast))
+    assert check_expression_in_program(
+        expr, structure_definitions=(param_point_ast,)
+    ) == drip_typing.ConcreteType(
+        type=drip_typing.StructureType(structure=concrete_point_ast)
+    )
 
     expr_2 = ast.PropertyAccessExpression(entity=expr, property_name="x")
 
-    assert check_expression_in_program(expr_2, structure_definitions=(param_point_ast,)) == FLOAT
+    assert (
+        check_expression_in_program(expr_2, structure_definitions=(param_point_ast,))
+        == FLOAT
+    )
 
 
 def test_typing_param_parse() -> None:
-    ast_a = parser.parse("""
+    ast_a = parser.parse(
+        """
     structure Point [T, U] (
       x: T,
       y: U 
@@ -133,7 +143,8 @@ def test_typing_param_parse() -> None:
       return origin.x;
     )
 
-    """).finalize()
+    """
+    ).finalize()
     context = ast.TypeCheckingContext(structure_lookup=ast_a.structure_lookup)
     assert ast_a.function_definitions[0].type_check(context) == FLOAT
 

@@ -1,2 +1,2 @@
 set -e
-black drip/ tests/
+black drip/ tests/ mypy_plugins

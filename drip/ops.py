@@ -16,7 +16,6 @@ from drip.validated_dataclass import validated_dataclass
 from drip.util import pop, pop_n
 
 
-
 def no_default() -> None:
     raise ValueError("you must pass a default value for this field")
 

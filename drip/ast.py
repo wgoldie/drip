@@ -29,7 +29,7 @@ class TypeCheckingContext:
 
 def primitive_name_to_type(primitive_name: str) -> drip_typing.ConcreteType:
     return drip_typing.ConcreteType(
-        type=drip_typing.PrimitiveType(drip_typing.PRIMITIVES[primitive_name])
+        type=drip_typing.PrimitiveType(primitive=drip_typing.PRIMITIVES[primitive_name])
     )
 
 
@@ -74,7 +74,7 @@ class VariableReferenceExpression(Expression):
 class ConstructionExpression(Expression):
     type_name: str
     arguments: typing.Dict[str, "Expression"]
-    type_arguments: typing.Dict[str, str] = field(default_factory=dict) 
+    type_arguments: typing.Dict[str, str] = field(default_factory=dict)
 
     def type_check(self, context: TypeCheckingContext) -> drip_typing.ExpressionType:
         structure = context.structure_lookup[self.type_name]
@@ -261,9 +261,10 @@ def finalize_arguments(
 ) -> typing.Tuple[ArgumentDefinition, ...]:
     return tuple(
         ArgumentDefinition(
-            name=argument.name, type=type_name_to_type(context, argument.type_name)
+            name=argument.name,
+            type=type_name_to_type(context, argument.type_name)
             if argument.type_name not in type_parameters
-            else drip_typing.Placeholder(name=argument.type_name)
+            else drip_typing.Placeholder(name=argument.type_name),
         )
         for argument in arguments
     )
@@ -294,7 +295,11 @@ class ProgramPreliminary:
             function_definitions=tuple(
                 FunctionDefinition(
                     name=definition.name,
-                    arguments=finalize_arguments(context=final_context, type_parameters=tuple(), arguments=definition.arguments),
+                    arguments=finalize_arguments(
+                        context=final_context,
+                        type_parameters=tuple(),
+                        arguments=definition.arguments,
+                    ),
                     procedure=definition.procedure,
                 )
                 for definition in self.function_definitions
