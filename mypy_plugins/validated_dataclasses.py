@@ -56,7 +56,9 @@ class CustomDataclassesPlugin(Plugin):
 
 
 def plugin(version: str) -> typing.Type[Plugin]:
-    VERSIONS = ('0.910',)
+    VERSIONS = ("0.910",)
     if version not in VERSIONS:
-        raise NotImplementedError(f"Mypy version {version} in use. Only versions {VERSIONS} supported")
+        raise NotImplementedError(
+            f"Mypy version {version} in use. Only versions {VERSIONS} supported"
+        )
     return CustomDataclassesPlugin
