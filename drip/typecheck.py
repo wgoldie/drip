@@ -1,5 +1,6 @@
 from __future__ import annotations
 import typing
+from drip.constants import INDENT
 from functools import cached_property
 from dataclasses import replace
 from drip.validated_dataclass import validated_dataclass
@@ -15,6 +16,10 @@ class Placeholder:
 class ArgumentDefinition:
     name: str
     type: ExpressionType
+    type_name: str
+
+    def serialize(self) -> str:
+        return f"{self.name}: {self.type_name}"
 
 
 @validated_dataclass
@@ -43,6 +48,19 @@ class StructureDefinition:
             ),
         )
 
+    def serialize(self, name: str) -> str:
+        type_parameters_snippet = (
+            f' [{", ".join(self.type_parameters)}]'
+            if len(self.type_parameters) > 0
+            else ""
+        )
+
+        return (
+            f"structure {name}{type_parameters_snippet} ("
+            + "".join([f"\n{INDENT}{field.serialize()}," for field in self.fields])
+            + "\n)"
+        )
+
 
 @validated_dataclass
 class StructureType:
@@ -56,11 +74,16 @@ class PrimitiveType:
         typing.Type[float],
     ]
 
+    def serialize(self) -> str:
+        return PRIMITIVES_REV[self.primitive]
+
 
 PRIMITIVES = {
     "Int": int,
     "Float": float,
 }
+
+PRIMITIVES_REV = {type: name for name, type in PRIMITIVES.items()}
 
 DripType = typing.Union[
     PrimitiveType,

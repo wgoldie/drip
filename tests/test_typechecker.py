@@ -13,6 +13,7 @@ FLOAT = drip_typing.ConcreteType(
 
 def check_expression_in_program(
     expression: ast.Expression,
+    type_name: str,
     structure_definitions: typing.Tuple[
         ast.StructureDefinitionPreliminary, ...
     ] = tuple(),
@@ -23,6 +24,7 @@ def check_expression_in_program(
             ast.FunctionDefinitionPreliminary(
                 name="main",
                 arguments=(),
+                return_type_name=type_name,
                 procedure=(ast.ReturnStatement(expression=expression),),
             ),
         ),
@@ -34,7 +36,7 @@ def check_expression_in_program(
 
 def test_typing_minimal() -> None:
     expr = ast.LiteralExpression(type_name="Float", value=1.0)
-    assert check_expression_in_program(expr) == drip_typing.ConcreteType(
+    assert check_expression_in_program(expr, "Float") == drip_typing.ConcreteType(
         type=drip_typing.PrimitiveType(primitive=float)
     )
 
@@ -45,7 +47,7 @@ def test_typing_binop() -> None:
         lhs=ast.LiteralExpression(type_name="Float", value=1.0),
         rhs=ast.LiteralExpression(type_name="Float", value=1.0),
     )
-    assert check_expression_in_program(expr) == drip_typing.ConcreteType(
+    assert check_expression_in_program(expr, "Float") == drip_typing.ConcreteType(
         type=drip_typing.PrimitiveType(primitive=float)
     )
 
@@ -69,13 +71,13 @@ def test_typing_construction() -> None:
 
     point_ast_final = ast.StructureDefinition(
         fields=(
-            ast.ArgumentDefinition(name="x", type=FLOAT),
-            ast.ArgumentDefinition(name="y", type=FLOAT),
+            ast.ArgumentDefinition(name="x", type=FLOAT, type_name="Float"),
+            ast.ArgumentDefinition(name="y", type=FLOAT, type_name="Float"),
         ),
     )
 
     assert check_expression_in_program(
-        expr, structure_definitions=(point_ast,)
+        expr, "Point", structure_definitions=(point_ast,)
     ) == drip_typing.ConcreteType(
         type=drip_typing.StructureType(structure=point_ast_final)
     )
@@ -83,7 +85,7 @@ def test_typing_construction() -> None:
     expr_2 = ast.PropertyAccessExpression(entity=expr, property_name="x")
 
     assert check_expression_in_program(
-        expr_2, structure_definitions=(point_ast,)
+        expr_2, "Float", structure_definitions=(point_ast,)
     ) == drip_typing.ConcreteType(
         type=drip_typing.PrimitiveType(primitive=float),
     )
@@ -100,8 +102,8 @@ def test_typing_param() -> None:
     )
     concrete_point_ast = ast.StructureDefinition(
         fields=(
-            ast.ArgumentDefinition(name="x", type=FLOAT),
-            ast.ArgumentDefinition(name="y", type=FLOAT),
+            ast.ArgumentDefinition(name="x", type=FLOAT, type_name="T"),
+            ast.ArgumentDefinition(name="y", type=FLOAT, type_name="T"),
         ),
     )
 
@@ -117,7 +119,7 @@ def test_typing_param() -> None:
     )
 
     assert check_expression_in_program(
-        expr, structure_definitions=(param_point_ast,)
+        expr, "Point", structure_definitions=(param_point_ast,)
     ) == drip_typing.ConcreteType(
         type=drip_typing.StructureType(structure=concrete_point_ast)
     )
@@ -125,7 +127,9 @@ def test_typing_param() -> None:
     expr_2 = ast.PropertyAccessExpression(entity=expr, property_name="x")
 
     assert (
-        check_expression_in_program(expr_2, structure_definitions=(param_point_ast,))
+        check_expression_in_program(
+            expr_2, "Float", structure_definitions=(param_point_ast,)
+        )
         == FLOAT
     )
 
@@ -138,7 +142,7 @@ def test_typing_param_parse() -> None:
       y: U 
     )
 
-    function main () -> Int (
+    function main () -> Float (
       origin = Point [T = Float, U = Float] (x=0.,y=0.,);
       return origin.x;
     )

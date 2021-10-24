@@ -1,1 +1,1 @@
-pytest -v
+pytest -vv

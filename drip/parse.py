@@ -24,9 +24,7 @@ def p_program_empty(p: yacc.YaccProduction) -> None:
 def p_function_definition(p: yacc.YaccProduction) -> None:
     """function_definition : FUNCTION SNAKE_NAME LPAREN argument_definitions_final RPAREN ARROW CAMEL_NAME LPAREN function_body RPAREN"""
     p[0] = ast.FunctionDefinitionPreliminary(
-        name=p[2],
-        arguments=p[4],
-        procedure=p[9],
+        name=p[2], arguments=p[4], procedure=p[9], return_type_name=p[7]
     )
 
 

@@ -26,6 +26,7 @@ AST_A = ast.ProgramPreliminary(
             arguments=(
                 ast.ArgumentDefinitionPreliminary(name="line", type_name="Line"),
             ),
+            return_type_name="Float",
             procedure=(
                 ast.ReturnStatement(
                     expression=ast.BinaryOperatorExpression(
@@ -71,6 +72,7 @@ AST_A = ast.ProgramPreliminary(
         ast.FunctionDefinitionPreliminary(
             name="main",
             arguments=tuple(),
+            return_type_name="Float",
             procedure=(
                 ast.AssignmentStatement(
                     variable_name="origin",

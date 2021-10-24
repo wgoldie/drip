@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field, replace
 from drip.validated_dataclass import validated_dataclass
 from functools import cached_property
+from drip.constants import INDENT
 import drip.typecheck as drip_typing
 from drip.typecheck import StructureDefinition, ArgumentDefinition
 import typing
@@ -12,6 +13,9 @@ import abc
 class NamedStructureDefinition:
     structure: drip_typing.StructureDefinition
     name: str
+
+    def serialize(self) -> str:
+        return self.structure.serialize(name=self.name)
 
 
 @validated_dataclass
@@ -53,6 +57,10 @@ class Expression(abc.ABC):
     def type_check(self, context: TypeCheckingContext) -> drip_typing.ExpressionType:
         ...
 
+    @abc.abstractmethod
+    def serialize(self) -> str:
+        ...
+
 
 @validated_dataclass
 class LiteralExpression(Expression):
@@ -62,6 +70,9 @@ class LiteralExpression(Expression):
     def type_check(self, context: TypeCheckingContext) -> drip_typing.ExpressionType:
         return primitive_name_to_type(self.type_name)
 
+    def serialize(self) -> str:
+        return str(self.value)
+
 
 @validated_dataclass
 class VariableReferenceExpression(Expression):
@@ -69,6 +80,9 @@ class VariableReferenceExpression(Expression):
 
     def type_check(self, context: TypeCheckingContext) -> drip_typing.ExpressionType:
         return context.local_scope[self.name]
+
+    def serialize(self) -> str:
+        return self.name
 
 
 @validated_dataclass
@@ -95,6 +109,22 @@ class ConstructionExpression(Expression):
                 )
             )
 
+    def serialize(self) -> str:
+        argument_parts = [
+            f"{argument_name}={expression.serialize()}"
+            for argument_name, expression in self.arguments.items()
+        ]
+        type_argument_parts = [
+            f"{argument_name}={type_name}"
+            for argument_name, type_name in self.type_arguments.items()
+        ]
+        type_parameters_snippet = (
+            f" [', '.join(type_argument_parts)]" if len(type_argument_parts) > 0 else ""
+        )
+        return (
+            f"{self.type_name}{type_parameters_snippet} ({', '.join(argument_parts)})"
+        )
+
 
 @validated_dataclass
 class FunctionCallExpression(Expression):
@@ -103,6 +133,13 @@ class FunctionCallExpression(Expression):
 
     def type_check(self, context: TypeCheckingContext) -> drip_typing.ExpressionType:
         return context.function_return_types[self.function_name]
+
+    def serialize(self) -> str:
+        argument_parts = [
+            f"{argument_name}={expression.serialize()}"
+            for argument_name, expression in self.arguments.items()
+        ]
+        return f"{self.function_name}({', '.join(argument_parts)})"
 
 
 @validated_dataclass
@@ -118,10 +155,13 @@ class PropertyAccessExpression(Expression):
         field = entity_type.type.structure.field_lookup[self.property_name]
         return field.type
 
+    def serialize(self) -> str:
+        return f"{self.entity.serialize()}.{self.property_name}"
 
-class BinaryOperator(enum.Enum):
-    ADD = enum.auto()
-    SUBTRACT = enum.auto()
+
+class BinaryOperator(str, enum.Enum):
+    ADD = "+"
+    SUBTRACT = "-"
 
 
 @validated_dataclass
@@ -136,16 +176,25 @@ class BinaryOperatorExpression(Expression):
         assert lhs_type == rhs_type
         return lhs_type
 
+    def serialize(self) -> str:
+        return f"({self.lhs.serialize()} {self.operator.value} {self.rhs.serialize()})"
+
 
 @validated_dataclass
 class ReturnStatement:
     expression: Expression
+
+    def serialize(self) -> str:
+        return f"return {self.expression.serialize()}"
 
 
 @validated_dataclass
 class AssignmentStatement:
     variable_name: str
     expression: Expression
+
+    def serialize(self) -> str:
+        return f"{self.variable_name} = {self.expression.serialize()}"
 
 
 Statement = typing.Union[AssignmentStatement, ReturnStatement]
@@ -156,6 +205,8 @@ class FunctionDefinition:
     name: str
     arguments: typing.Tuple[drip_typing.ArgumentDefinition, ...]
     procedure: typing.Tuple[Statement, ...]
+    return_type: drip_typing.ExpressionType
+    return_type_name: str
 
     def type_check(self, context: TypeCheckingContext) -> drip_typing.ExpressionType:
         context = replace(
@@ -187,8 +238,21 @@ class FunctionDefinition:
                 )
             else:
                 raise NotImplementedError(type(statement))
-        assert return_type is not None
+        assert return_type == self.return_type
         return return_type
+
+    def serialize(self) -> str:
+        return (
+            f"function {self.name} ("
+            + "".join(
+                [f"\n{INDENT}{argument.serialize()}," for argument in self.arguments]
+            )
+            + f"\n) -> {self.return_type_name} ("
+            + "".join(
+                [f"\n{INDENT}{statement.serialize()};" for statement in self.procedure]
+            )
+            + "\n)"
+        )
 
 
 @validated_dataclass
@@ -223,16 +287,14 @@ class Program:
             )
         return context
 
+    def serialize(self) -> str:
+        snippets = []
+        for structure_definition in self.structure_definitions:
+            snippets.append(structure_definition.serialize())
 
-@validated_dataclass
-class FinalizationContext:
-    type_parameters: typing.Tuple[str]
-
-
-def resolve_preliminary_type_name(
-    context: FinalizationContext, type_name: str
-) -> drip_typing.ExpressionType:
-    pass
+        for function_definition in self.function_definitions:
+            snippets.append(function_definition.serialize())
+        return "\n\n".join(snippets)
 
 
 @validated_dataclass
@@ -251,8 +313,22 @@ class StructureDefinitionPreliminary:
 @validated_dataclass
 class FunctionDefinitionPreliminary:
     name: str
+    return_type_name: str
     arguments: typing.Tuple[ArgumentDefinitionPreliminary, ...] = tuple()
     procedure: typing.Tuple[Statement, ...] = tuple()
+
+    def finalize(self, context: TypeCheckingContext) -> FunctionDefinition:
+        return FunctionDefinition(
+            name=self.name,
+            arguments=finalize_arguments(
+                context=context,
+                type_parameters=tuple(),
+                arguments=self.arguments,
+            ),
+            return_type_name=self.return_type_name,
+            return_type=type_name_to_type(context, self.return_type_name),
+            procedure=self.procedure,
+        )
 
 
 def finalize_arguments(
@@ -266,6 +342,7 @@ def finalize_arguments(
             type=type_name_to_type(context, argument.type_name)
             if argument.type_name not in type_parameters
             else drip_typing.Placeholder(name=argument.type_name),
+            type_name=argument.type_name,
         )
         for argument in arguments
     )
@@ -294,15 +371,7 @@ class ProgramPreliminary:
                 for name, structure in structure_lookup.items()
             ),
             function_definitions=tuple(
-                FunctionDefinition(
-                    name=definition.name,
-                    arguments=finalize_arguments(
-                        context=final_context,
-                        type_parameters=tuple(),
-                        arguments=definition.arguments,
-                    ),
-                    procedure=definition.procedure,
-                )
+                definition.finalize(final_context)
                 for definition in self.function_definitions
             ),
         )
